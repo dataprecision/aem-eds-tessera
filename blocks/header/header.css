@@ -1,9 +1,26 @@
-/* header and nav layout */
+/* stylelint-disable max-line-length */
+
+/* header and nav layout
+ * CONFLICT resolved: spec.computedStyle measures the block root transparent/fixed/84px/z-index 5,
+ * while visualSpec describes a white bar — the white came from a fixed campaign <img> plate that is
+ * dropped here, so .nav-wrapper paints the surface and the root stays transparent.
+ */
+header .header {
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--nav-height);
+  z-index: 5;
+  background-color: transparent;
+  box-shadow: none;
+}
+
 header .nav-wrapper {
   background-color: var(--background-color);
+  border-bottom: 1px solid var(--border-color);
   width: 100%;
-  z-index: 2;
+  z-index: 5;
   position: fixed;
+  top: 0;
 }
 
 header nav {
@@ -15,7 +32,7 @@ header nav {
   align-items: center;
   gap: 0 24px;
   margin: auto;
-  max-width: 1248px;
+  max-width: var(--container-width);
   height: var(--nav-height);
   padding: 0 24px;
   font-family: var(--body-font-family);
@@ -25,22 +42,19 @@ header nav[aria-expanded='true'] {
   grid-template:
     'hamburger brand' var(--nav-height)
     'sections sections' 1fr
-    'tools tools' var(--nav-height) / auto 1fr;
+    'tools tools' auto / auto 1fr;
   overflow-y: auto;
   min-height: 100dvh;
+  background-color: var(--background-color);
 }
 
 @media (width >= 900px) {
-  header .nav-wrapper {
-    position: relative;
-  }
-
   header nav {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 0 32px;
-    max-width: 1264px;
-    padding: 0 32px;
+    padding: 0 28px;
   }
 
   header nav[aria-expanded='true'] {
@@ -72,7 +86,7 @@ header nav .nav-hamburger button {
   border: 0;
   border-radius: 0;
   padding: 0;
-  background-color: var(--background-color);
+  background-color: transparent;
   color: inherit;
   overflow: initial;
   text-overflow: initial;
@@ -142,14 +156,19 @@ header nav[aria-expanded='true'] .nav-hamburger-icon::after {
 /* brand */
 header .nav-brand {
   grid-area: brand;
-  flex-basis: 128px;
+  flex: 0 0 auto;
   font-size: var(--heading-font-size-s);
   font-weight: 700;
   line-height: 1;
 }
 
+header nav .nav-brand p {
+  margin: 0;
+}
+
 header nav .nav-brand img {
-  width: 128px;
+  display: block;
+  width: 96px;
   height: auto;
 }
 
@@ -169,20 +188,93 @@ header nav[aria-expanded='true'] .nav-sections {
 
 header nav .nav-sections ul {
   list-style: none;
+  margin: 0;
   padding-left: 0;
   font-size: var(--body-font-size-s);
 }
 
-header nav .nav-sections ul > li {
+header nav .nav-sections .nav-menu > li {
+  position: relative;
   font-weight: 500;
 }
 
-header nav .nav-sections ul > li > ul {
-  margin-top: 0;
+header nav .nav-drop-trigger,
+header nav .nav-sections .nav-menu > li > a {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 12px 16px 12px 0;
+  background: none;
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.28px;
+  line-height: 1.2;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-header nav .nav-sections ul > li > ul > li {
-  font-weight: 400;
+/* caret: source used a 9x6 png sprite on li::after; redrawn here with clip-path in brand accent */
+header nav .nav-drop > .nav-drop-trigger::after {
+  content: '';
+  display: inline-block;
+  margin-left: 8px;
+  width: 9px;
+  height: 6px;
+  vertical-align: middle;
+  background-color: var(--brand-accent);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transition: transform 0.2s ease;
+}
+
+header nav .nav-drop[aria-expanded='true'] > .nav-drop-trigger::after,
+header nav .nav-drop:focus-within > .nav-drop-trigger::after {
+  transform: rotate(180deg);
+}
+
+header nav .nav-drop[aria-expanded='true'] > .nav-drop-trigger,
+header nav .nav-drop:focus-within > .nav-drop-trigger,
+header nav .nav-sections .nav-menu > li > a:hover {
+  color: var(--link-color);
+}
+
+/* dropdown panels — exactly one level, closed by default */
+header nav .nav-drop-list {
+  display: none;
+  margin: 0;
+  padding: 0 0 8px 16px;
+}
+
+header nav .nav-drop[aria-expanded='true'] > .nav-drop-list {
+  display: block;
+}
+
+header nav .nav-drop-list a {
+  display: block;
+  padding: 8px 16px;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+header nav .nav-drop-list a:hover,
+header nav .nav-drop-list a:focus-visible {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+header nav .nav-drop-title {
+  padding: 12px 16px 0;
+  color: var(--muted-color);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 @media (width >= 900px) {
@@ -196,77 +288,247 @@ header nav .nav-sections ul > li > ul > li {
     align-self: unset;
   }
 
-  header nav .nav-sections .nav-drop {
-    position: relative;
-    padding-right: 16px;
-    cursor: pointer;
-  }
-
-  header nav .nav-sections .nav-drop::after {
-    content: '';
-    display: inline-block;
-    position: absolute;
-    top: 0.5em;
-    right: 2px;
-    transform: rotate(135deg);
-    width: 6px;
-    height: 6px;
-    border: 2px solid currentcolor;
-    border-radius: 0 1px 0 0;
-    border-width: 2px 2px 0 0;
-  }
-
-  header nav .nav-sections .nav-drop[aria-expanded='true']::after {
-    top: unset;
-    bottom: 0.5em;
-    transform: rotate(315deg);
-  }
-
-  header nav .nav-sections ul {
+  header nav .nav-sections .nav-menu {
     display: flex;
-    gap: 24px;
+    gap: 0;
     margin: 0;
+    padding: 0;
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li {
-    flex: 0 1 auto;
-    position: relative;
+  header nav .nav-drop-trigger,
+  header nav .nav-sections .nav-menu > li > a {
+    padding: 24px 16px;
+    width: auto;
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li > ul {
-    display: none;
-    position: relative;
-  }
-
-  header nav .nav-sections .default-content-wrapper > ul > li[aria-expanded='true'] > ul {
-    display: block;
+  header nav .nav-drop-list {
     position: absolute;
-    left: -24px;
-    width: 200px;
-    top: 150%;
-    padding: 16px;
-    background-color: var(--light-color);
+    top: 100%;
+    left: 0;
+    min-width: 160px;
+    padding: 5px 0;
+    background-color: var(--surface-muted);
+    box-shadow: 0 0 6px 0 rgb(0 0 0 / 10%);
     white-space: initial;
+    z-index: 999;
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li > ul::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: 16px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--light-color);
+  header nav .nav-drop:hover > .nav-drop-list,
+  header nav .nav-drop:focus-within > .nav-drop-list,
+  header nav .nav-drop[aria-expanded='true'] > .nav-drop-list {
+    display: block;
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li > ul > li {
-    padding: 8px 0;
+  header nav .nav-drop:hover > .nav-drop-trigger {
+    color: var(--link-color);
+  }
+
+  header nav .nav-drop:hover > .nav-drop-trigger::after {
+    transform: rotate(180deg);
   }
 }
 
 /* tools */
 header nav .nav-tools {
   grid-area: tools;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+}
+
+header nav .nav-tools-primary,
+header nav .nav-tools-secondary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+header nav .nav-tools-primary {
+  display: none;
+}
+
+header nav .nav-tools-link {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.26px;
+  text-decoration: none;
+}
+
+header nav .nav-tools-link:hover {
+  text-decoration: none;
+}
+
+header nav .nav-consumer {
+  color: var(--muted-color);
+  font-size: 12px;
+  letter-spacing: 0.24px;
+}
+
+header nav .nav-recharge {
+  color: var(--link-color);
+  text-transform: uppercase;
+}
+
+header nav .nav-recharge:hover {
+  color: var(--link-color);
+}
+
+/* login control */
+header nav .nav-login-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.26px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+header nav .nav-login-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-color: currentcolor;
+  mask: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+header nav .nav-login-label {
+  display: none;
+}
+
+/* language selector */
+header nav .nav-language {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: var(--text-color);
+}
+
+header nav .nav-language::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background-color: currentcolor;
+  mask: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18'/%3E%3Cellipse cx='12' cy='12' rx='4' ry='9'/%3E%3C/svg%3E") center / contain no-repeat;
+  pointer-events: none;
+}
+
+header nav .nav-language::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  width: 9px;
+  height: 6px;
+  background-color: var(--brand-accent);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none;
+}
+
+header nav .nav-language-select {
+  appearance: none;
+  width: 103px;
+  border: 0;
+  padding: 0 20px;
+  background-color: transparent;
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+@media (width >= 900px) {
+  header nav .nav-tools-primary {
+    display: flex;
+  }
+}
+
+/* login slide-in panel
+ * NOTE: source panel collects VC no./OTP/Google sign-in — no endpoint supplied,
+ * so this ships as an account link only (flagged to the content owner).
+ */
+header .header .nav-login-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background-color: rgb(0 0 0 / 40%);
+}
+
+header .header .nav-login-panel[aria-hidden='true'] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+header .header .nav-login-dialog {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(504px, 100%);
+  height: 100%;
+  padding: 32px 24px;
+  background-color: var(--background-color);
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+
+header .header .nav-login-panel[aria-hidden='true'] .nav-login-dialog {
+  transform: translateX(100%);
+}
+
+header .header .nav-login-close {
+  align-self: flex-end;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+header .header .nav-login-close::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: var(--text-color);
+  mask: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1L13 13M13 1L1 13'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+}
+
+header .header .nav-login-title {
+  margin: 0;
+  font-size: var(--heading-font-size-s);
+  font-weight: 700;
+}
+
+header .header .nav-login-copy {
+  margin: 0;
+  color: var(--dark-color);
+  font-size: var(--body-font-size-xs);
+}
+
+header .header .nav-login-cta {
+  align-self: flex-start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  header .header .nav-login-dialog,
+  header nav .nav-drop > .nav-drop-trigger::after {
+    transition: none;
+  }
 }
