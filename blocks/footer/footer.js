@@ -333,7 +333,9 @@ function decorateFooterContent(root) {
 export default async function decorate(block) {
   const footer = document.createElement('div');
 
-  if (block.children.length) {
+  // the boilerplate autoblock (buildBlock('footer', '')) arrives with one EMPTY
+  // row — only take the inline-authored path when the block carries real content
+  if (block.textContent.trim() || block.querySelector('img, picture')) {
     // inline authored footer (drafts/test content) — no fragment round-trip
     while (block.firstElementChild) footer.append(block.firstElementChild);
   } else {

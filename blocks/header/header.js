@@ -136,7 +136,9 @@ function readParts(container) {
 }
 
 async function getNavParts(block) {
-  if (block.children.length) return readParts(block);
+  // the boilerplate autoblock (buildBlock('header', '')) arrives with one EMPTY
+  // row — only treat the block as authored when it carries real content
+  if (block.textContent.trim() || block.querySelector('img, picture')) return readParts(block);
   const navMeta = getMetadata('nav');
   const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
   const fragment = await loadFragment(navPath);
