@@ -13,15 +13,26 @@
 :root {
   /* colors */
   --background-color: white;
-  --light-color: #f8f8f8;
-  --dark-color: #505050;
+  --light-color: #f5f5f5;
+  --dark-color: #333;
   --text-color: #131313;
-  --link-color: #3b63fb;
-  --link-hover-color: #1d3ecf;
+  --link-color: #f04c23;
+  --link-hover-color: #c93a15;
+
+  /* brand colors */
+  --brand-accent: #f04c23;
+  --brand-accent-alt: #ff5a12;
+  --brand-gradient: linear-gradient(67deg, #ff5a12 0%, #ff5a12 39.95%, #f02323 100%);
+
+  /* surfaces and lines */
+  --surface-muted: #f9f9f9;
+  --footer-bg: #202020;
+  --border-color: #e4e4e4;
+  --muted-color: #b1b1b1;
 
   /* fonts */
   --body-font-family: roboto, roboto-fallback, sans-serif;
-  --heading-font-family: roboto-condensed, roboto-condensed-fallback, sans-serif;
+  --heading-font-family: roboto, roboto-fallback, sans-serif;
 
   /* body sizes */
   --body-font-size-m: 22px;
@@ -36,17 +47,23 @@
   --heading-font-size-s: 24px;
   --heading-font-size-xs: 22px;
 
+  /* layout widths */
+  --container-width: 1440px;
+  --container-width-wide: 1520px;
+
+  /* radii */
+  --radius-s: 6px;
+  --radius-m: 8px;
+  --radius-pill: 36px;
+
   /* nav height */
-  --nav-height: 64px;
+  --nav-height: 84px;
+
+  /* category bar height */
+  --category-bar-height: 70px;
 }
 
 /* fallback fonts */
-@font-face {
-  font-family: roboto-condensed-fallback;
-  size-adjust: 88.82%;
-  src: local('Arial');
-}
-
 @font-face {
   font-family: roboto-fallback;
   size-adjust: 99.529%;
@@ -107,7 +124,7 @@ h6 {
   margin-top: 0.8em;
   margin-bottom: 0.25em;
   font-family: var(--heading-font-family);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.25;
   scroll-margin: 40px;
 }
@@ -136,7 +153,7 @@ pre {
 
 pre {
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background-color: var(--light-color);
   overflow-x: auto;
   white-space: pre;
@@ -151,6 +168,19 @@ textarea,
 select,
 button {
   font: inherit;
+}
+
+/* global focus visibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-s);
 }
 
 /* links */
@@ -179,7 +209,7 @@ button.button {
   max-width: 100%;
   margin: 0;
   border: 2px solid transparent;
-  border-radius: 2.4em;
+  border-radius: var(--radius-pill);
   padding: 0.5em 1.2em;
   font: inherit;
   font-weight: 500;
@@ -301,7 +331,7 @@ main > .section {
 }
 
 main > .section > div {
-  max-width: 1200px;
+  max-width: var(--container-width);
   margin: auto;
   padding: 0 24px;
 }
@@ -322,4 +352,28 @@ main .section.highlight {
   background-color: var(--light-color);
   margin: 0;
   padding: 40px 0;
+}
+
+main .section.muted {
+  background-color: var(--surface-muted);
+  margin: 0;
+  padding: 40px 0;
+}
+
+main .section.dark {
+  background-color: var(--dark-color);
+  color: var(--background-color);
+  margin: 0;
+  padding: 40px 0;
+}
+
+main .section.brand-band {
+  background: var(--brand-gradient);
+  color: var(--background-color);
+  margin: 0;
+  padding: 0;
+}
+
+main .section.full-width > div {
+  max-width: var(--container-width-wide);
 }
