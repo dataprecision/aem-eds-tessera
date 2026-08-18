@@ -2,12 +2,20 @@ import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 
 /*
- * Footer — dark six-column grid (5 link columns + Locate-a-Dealer / Follow us),
- * copyright band and legal row, with a CSS/JS accordion on mobile driven by the
- * SAME markup (source duplicated every list into a hidden .foot-mob copy: dropped).
- * FIXes applied over source: real <ul><li>, real <form> + native pattern validation
- * with inline error (no SweetAlert2), rel="noopener noreferrer" on the 4 social
- * links, hover/focus-visible affordances, decorative art as aria-hidden img.
+ * Footer — dark six-unit grid (5 link columns + Locate-a-Dealer / Follow us),
+ * brand + copyright band and legal row, with a JS/CSS accordion on mobile driven by
+ * the SAME markup the desktop grid uses (source shipped a duplicate .foot-mob copy of
+ * every list — 67 anchors for ~35 visible links — that duplication is dropped).
+ *
+ * FIXes over source: real <ul><li>, real <form> + pattern="[0-9]{6}" with an inline
+ * role=alert error (replaces the off-root SweetAlert2 modal), rel="noopener" on the
+ * 4 target="_blank" social links, decorative art as alt=""/aria-hidden img.
+ * REPLICATE-AS-IS: no hover affordances anywhere (focus-visible comes from the global
+ * rule in styles.css); all non-social anchors stay same-tab with no rel.
+ *
+ * CONFLICT: contentModelShape lists dealer as [placeholder, destination] while the
+ * authored rows are key-driven (cell 0 = row name) — resolved by treating cell 0 as
+ * the key and merging cells[1..] as the content, so 2- and 3-cell rows both work.
  */
 
 const DESKTOP_QUERY = '(min-width: 900px)';
@@ -38,17 +46,23 @@ function decorativeImage(img, className) {
 }
 
 function textParagraph(cell) {
-  return [...cell.querySelectorAll('p, div')]
+  return [...cell.querySelectorAll('p, div, span')]
     .find((el) => !el.querySelector('img') && el.textContent.trim());
+}
+
+function cleanAnchor(a) {
+  a.classList.remove('button', 'primary', 'secondary', 'accent');
+  const wrapper = a.closest('.button-wrapper');
+  if (wrapper) wrapper.classList.remove('button-wrapper');
+  return a;
 }
 
 function buildLinkList(cell, className) {
   const list = document.createElement('ul');
   list.className = className;
   cell.querySelectorAll('a').forEach((a) => {
-    a.classList.remove('button', 'primary', 'secondary', 'accent');
     const li = document.createElement('li');
-    li.append(a);
+    li.append(cleanAnchor(a));
     list.append(li);
   });
   return list;
@@ -93,7 +107,8 @@ function buildDealer(title, cell) {
   const arrow = action ? action.querySelector('img') : null;
   const labelSource = textParagraph(cell);
   const placeholder = labelSource ? labelSource.textContent.trim() : 'Enter Pincode';
-  const destination = action && action.getAttribute('href') && !action.getAttribute('href').startsWith('javascript') ? action.getAttribute('href') : '';
+  const href = action ? action.getAttribute('href') || '' : '';
+  const destination = href && !href.startsWith('javascript') ? href : '';
 
   const form = document.createElement('form');
   form.className = 'footer-dealer-form';
@@ -123,7 +138,14 @@ function buildDealer(title, cell) {
   const submit = document.createElement('button');
   submit.type = 'submit';
   submit.className = 'footer-dealer-submit';
-  if (arrow) submit.append(decorativeImage(arrow, 'footer-dealer-arrow'));
+  if (arrow) {
+    submit.append(decorativeImage(arrow, 'footer-dealer-arrow'));
+  } else {
+    const glyph = document.createElement('span');
+    glyph.className = 'footer-dealer-arrow footer-dealer-arrow-fallback';
+    glyph.setAttribute('aria-hidden', 'true');
+    submit.append(glyph);
+  }
   submit.append(srOnly('Find a dealer'));
 
   form.append(label, input, submit);
@@ -135,6 +157,7 @@ function buildDealer(title, cell) {
   error.hidden = true;
   error.textContent = DEALER_ERROR;
 
+  // source stripped non-digits on input (onkeypress isNumber + input listener) — kept
   input.addEventListener('input', () => {
     const digits = input.value.replace(/[^0-9]/g, '');
     if (digits !== input.value) input.value = digits;
@@ -154,8 +177,8 @@ function buildDealer(title, cell) {
     }
     error.hidden = true;
     input.removeAttribute('aria-invalid');
-    // FLAG-TO-CONTENT-OWNER: source POSTed to /api/Subscriber/PinCodeDetail (401 for
-    // guests) — the API call is omitted; navigate to the authored dealer page instead.
+    // FLAG-TO-CONTENT-OWNER: source POSTed to /api/Subscriber/PinCodeDetail, which 401s
+    // for guests — the API call is omitted; navigate to the authored dealer page instead.
     if (destination) {
       const separator = destination.includes('?') ? '&' : '?';
       window.location.href = `${destination}${separator}pincode=${encodeURIComponent(input.value)}`;
@@ -183,10 +206,11 @@ function buildSocial(title, cell) {
   cell.querySelectorAll('a').forEach((a) => {
     const label = a.textContent.trim();
     const img = a.querySelector('img');
-    a.classList.remove('button', 'primary', 'secondary', 'accent');
+    cleanAnchor(a);
     a.classList.add('footer-social-link');
+    // the ONLY 4 anchors in the footer that open a new tab (source parity) + noopener (FIX)
     a.setAttribute('target', '_blank');
-    a.setAttribute('rel', 'noopener noreferrer');
+    a.setAttribute('rel', 'noopener');
     if (img) decorativeImage(img, 'footer-social-icon');
     [...a.childNodes]
       .filter((node) => node.nodeType === Node.TEXT_NODE)
@@ -202,22 +226,25 @@ function buildSocial(title, cell) {
   return wrapper;
 }
 
-function buildBrand(cell) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'footer-brand';
+function appendLogo(brand, cell) {
   const img = cell.querySelector('img');
-  if (img) {
-    const media = mediaOf(img);
-    media.classList.add('footer-logo');
-    img.setAttribute('loading', 'lazy');
-    wrapper.append(media);
-  }
+  if (!img) return;
+  const media = mediaOf(img);
+  media.classList.add('footer-logo');
+  img.setAttribute('loading', 'lazy');
+  if (!img.getAttribute('alt')) img.setAttribute('alt', 'DishTV');
+  brand.prepend(media);
+}
+
+function appendCopyright(brand, cell) {
+  appendLogo(brand, cell);
   const source = textParagraph(cell);
+  const text = source ? source.textContent.trim() : cell.textContent.trim();
+  if (!text) return;
   const copyright = document.createElement('p');
   copyright.className = 'footer-copyright';
-  copyright.textContent = source ? source.textContent.trim() : '';
-  wrapper.append(copyright);
-  return wrapper;
+  copyright.textContent = text;
+  brand.append(copyright);
 }
 
 function buildLegal(cell) {
@@ -264,6 +291,13 @@ function rowsOf(root) {
   return [...scope.children].filter((el) => el.children.length >= 2);
 }
 
+function contentOf(cells) {
+  if (cells.length === 2) return cells[1];
+  const wrapper = document.createElement('div');
+  cells.slice(1).forEach((cell) => wrapper.append(cell));
+  return wrapper;
+}
+
 function decorateFooterContent(root) {
   if (root.querySelector('.footer-columns')) return;
   const rows = rowsOf(root);
@@ -277,29 +311,37 @@ function decorateFooterContent(root) {
   aside.className = 'footer-column footer-aside';
   const bottom = document.createElement('div');
   bottom.className = 'footer-bottom';
+  const brand = document.createElement('div');
+  brand.className = 'footer-brand';
 
   let shape = null;
-  let brand = null;
   let legal = null;
 
   rows.forEach((row) => {
     const cells = [...row.children];
     const key = cells[0].textContent.trim();
-    const content = cells[1] || document.createElement('div');
+    const content = contentOf(cells);
     switch (key.toLowerCase()) {
-      case 'decoration': {
+      case 'decoration':
+      case 'decorative': {
         const img = content.querySelector('img');
         if (img) shape = decorativeImage(img, 'footer-shape');
         break;
       }
       case 'locate a dealer':
+      case 'dealer':
         aside.append(buildDealer(key, content));
         break;
       case 'follow us':
+      case 'social':
         aside.append(buildSocial(key, content));
         break;
+      case 'brand':
+      case 'logo':
+        appendLogo(brand, content);
+        break;
       case 'copyright':
-        brand = buildBrand(content);
+        appendCopyright(brand, content);
         break;
       case 'legal':
         legal = buildLegal(content);
@@ -312,8 +354,8 @@ function decorateFooterContent(root) {
   if (aside.children.length) columns.append(aside);
   if (shape) inner.append(shape);
   inner.append(columns);
-  if (brand) bottom.append(brand);
-  if (brand || legal) {
+  if (brand.children.length) bottom.append(brand);
+  if (brand.children.length || legal) {
     const divider = document.createElement('hr');
     divider.className = 'footer-divider';
     bottom.append(divider);
@@ -333,9 +375,11 @@ function decorateFooterContent(root) {
 export default async function decorate(block) {
   const footer = document.createElement('div');
 
-  // the boilerplate autoblock (buildBlock('footer', '')) arrives with one EMPTY
-  // row — only take the inline-authored path when the block carries real content
-  if (block.textContent.trim() || block.querySelector('img, picture')) {
+  // FRAGMENT AUTOBLOCK TRAP: buildBlock('footer', '') hands us ONE EMPTY ROW, so
+  // block.children.length is truthy even with no content — test for real content instead.
+  const hasContent = !!(block.textContent.trim() || block.querySelector('img, picture, a'));
+
+  if (hasContent) {
     // inline authored footer (drafts/test content) — no fragment round-trip
     while (block.firstElementChild) footer.append(block.firstElementChild);
   } else {

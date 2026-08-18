@@ -2,17 +2,18 @@
  * help-links block
  * Authored as a 2-row table:
  *   row 1: [heading text] [GET HELP link]
- *   row 2: [pill link] x5
+ *   row 2: [pill link] x N (measured source: 5)
  *
- * Conflict resolved: visualSpec says pills are "200-220px wide"; computedStyle
- * measured 198.594px — computedStyle wins (180px basis + flex growth).
- * No hover/active states are implemented (measured: zero :hover rules in source);
- * the source's dead `transition: 0.5s` is dropped. Focus-visible affordance comes
- * from the global stylesheet.
+ * Conflict resolved: visualSpec calls the pills "200-220px wide"; computedStyle
+ * measured 198.594px — computedStyle wins, handled in CSS via flex growth.
+ * No hover/active state is implemented (measured: zero :hover rules in source) and
+ * the source's dead `transition: 0.5s` is deliberately dropped. Keyboard
+ * focus-visible affordance comes from the global stylesheet.
  */
 
 /**
- * strips boilerplate button decoration applied by scripts.js/aem.js
+ * strips boilerplate button decoration applied by scripts.js/aem.js and
+ * trims the label (source markup carries a trailing space in "Add/Delete Channel ")
  * @param {HTMLAnchorElement} a the anchor to normalize
  */
 function normalizeLink(a) {
@@ -22,9 +23,18 @@ function normalizeLink(a) {
   if (!a.className) a.removeAttribute('class');
 }
 
-export default function decorate(block) {
+/**
+ * splits the authored table into its two contractual rows
+ * @param {Element} block the block element
+ * @returns {[Element|undefined, Element|undefined]} [headRow, linksRow]
+ */
+function readParts(block) {
   const rows = [...block.children];
-  const [headRow, linksRow] = rows;
+  return [rows[0], rows[1]];
+}
+
+export default function decorate(block) {
+  const [headRow, linksRow] = readParts(block);
 
   const panel = document.createElement('div');
   panel.className = 'help-links-panel';

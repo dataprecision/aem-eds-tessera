@@ -4,6 +4,7 @@
  * CONFLICT resolved: spec.computedStyle measures the block root transparent/fixed/84px/z-index 5,
  * while visualSpec describes a white bar — the white came from a fixed campaign <img> plate that is
  * dropped here, so .nav-wrapper paints the surface and the root stays transparent.
+ * Appearance is identical before and after scroll: no scroll listener, no shrink, no shadow.
  */
 header .header {
   position: fixed;
@@ -70,6 +71,19 @@ header nav p {
 
 header nav a:any-link {
   color: currentcolor;
+}
+
+/* screen reader only text (e.g. the "opens in a new tab" hint on GET A CONNECTION) */
+header nav .nav-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 /* hamburger */
@@ -153,7 +167,7 @@ header nav[aria-expanded='true'] .nav-hamburger-icon::after {
   }
 }
 
-/* brand */
+/* brand — measured 96x50 (source logo is an animated GIF, intrinsic 800x419) */
 header .nav-brand {
   grid-area: brand;
   flex: 0 0 auto;
@@ -375,7 +389,7 @@ header nav .nav-recharge:hover {
   color: var(--link-color);
 }
 
-/* login control */
+/* login control — trigger only, the panel itself is supplied outside this block */
 header nav .nav-login-button {
   display: flex;
   align-items: center;
@@ -392,6 +406,10 @@ header nav .nav-login-button {
   cursor: pointer;
 }
 
+header nav .nav-login-button[aria-expanded='true'] {
+  color: var(--link-color);
+}
+
 header nav .nav-login-icon {
   display: block;
   width: 16px;
@@ -404,7 +422,7 @@ header nav .nav-login-label {
   display: none;
 }
 
-/* language selector */
+/* language selector — native <select>, 9 options, full navigate on change */
 header nav .nav-language {
   position: relative;
   display: flex;
@@ -454,80 +472,7 @@ header nav .nav-language-select {
   }
 }
 
-/* login slide-in panel
- * NOTE: source panel collects VC no./OTP/Google sign-in — no endpoint supplied,
- * so this ships as an account link only (flagged to the content owner).
- */
-header .header .nav-login-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  background-color: rgb(0 0 0 / 40%);
-}
-
-header .header .nav-login-panel[aria-hidden='true'] {
-  visibility: hidden;
-  opacity: 0;
-}
-
-header .header .nav-login-dialog {
-  box-sizing: border-box;
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: min(504px, 100%);
-  height: 100%;
-  padding: 32px 24px;
-  background-color: var(--background-color);
-  transform: translateX(0);
-  transition: transform 0.3s ease;
-}
-
-header .header .nav-login-panel[aria-hidden='true'] .nav-login-dialog {
-  transform: translateX(100%);
-}
-
-header .header .nav-login-close {
-  align-self: flex-end;
-  width: 24px;
-  height: 24px;
-  margin: 0;
-  border: 0;
-  padding: 0;
-  background-color: transparent;
-  cursor: pointer;
-}
-
-header .header .nav-login-close::before {
-  content: '';
-  display: block;
-  width: 100%;
-  height: 100%;
-  background-color: var(--text-color);
-  mask: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1L13 13M13 1L1 13'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
-}
-
-header .header .nav-login-title {
-  margin: 0;
-  font-size: var(--heading-font-size-s);
-  font-weight: 700;
-}
-
-header .header .nav-login-copy {
-  margin: 0;
-  color: var(--dark-color);
-  font-size: var(--body-font-size-xs);
-}
-
-header .header .nav-login-cta {
-  align-self: flex-start;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  header .header .nav-login-dialog,
   header nav .nav-drop > .nav-drop-trigger::after {
     transition: none;
   }
