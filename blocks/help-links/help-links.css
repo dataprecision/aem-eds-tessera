@@ -1,6 +1,15 @@
 /* help-links — contained panel with a heading, a CTA link, and a row of pill links.
-   Rendered in normal document flow: the source's absolutely positioned,
-   negative-top overlap and its background decoration are intentionally not carried over. */
+   Rendered in normal document flow: the source wrapper's position:absolute / top:-18%
+   footer overlap is intentionally NOT carried over (buildNotes), and the orange
+   geometric decoration behind the source panel belongs to the neighbouring section,
+   not to this block. Block subtree ships zero images / zero background-images. */
+
+.help-links {
+  /* measured block-local values that are not part of the global palette:
+     heading grey rgb(68,68,68) and the translucent pill hairline */
+  --help-links-heading-color: #444;
+  --help-links-pill-border: rgb(128 128 128 / 32%);
+}
 
 .help-links .help-links-panel {
   box-sizing: border-box;
@@ -18,7 +27,7 @@
 
 .help-links .help-links-headline {
   margin: 0;
-  color: #444;
+  color: var(--help-links-heading-color);
   font-size: 18px;
   font-weight: 500;
   line-height: 40px;
@@ -42,8 +51,9 @@
   margin: 0;
 }
 
-/* pill link: measured 40px tall, 36px radius, 1px translucent grey border,
-   orange label at 14px/500 (span) inside a 13px/700 anchor */
+/* pill link: measured 40px tall, 36px radius, 1px translucent grey hairline,
+   orange label at 14px/500 (source span) — the anchor's own 13px/700 is never
+   visible because the label span carries the type, so we declare the span values */
 .help-links .help-links-pill {
   box-sizing: border-box;
   display: flex;
@@ -52,7 +62,7 @@
   width: 82.815%;
   height: 40px;
   margin: 11px 0 0;
-  border: 1px solid rgb(128 128 128 / 32%);
+  border: 1px solid var(--help-links-pill-border);
   border-radius: var(--radius-pill);
   padding: 0 22px;
   background-color: var(--background-color);
@@ -65,14 +75,16 @@
   cursor: pointer;
 }
 
-/* source has no hover styling at all; keep the affordance to cursor only */
+/* measured: source has zero :hover rules for these controls — neutralise the
+   global a:hover colour/underline so hover changes cursor only. Keyboard
+   focus-visible outline is inherited from styles.css. */
 .help-links .help-links-pill:hover,
 .help-links .help-links-cta:hover {
   color: var(--link-color);
   text-decoration: none;
 }
 
-/* matches the source 650-1024px tweak that zeroes the pill gutter */
+/* matches the source 650–1024px tweak that zeroes the pill gutter */
 @media (width >= 650px) and (width <= 1024px) {
   .help-links .help-links-pill {
     margin-right: 0;
@@ -105,7 +117,9 @@
     justify-content: flex-start;
   }
 
-  /* measured 20px gutter comes from margin-right (computed gap is `normal`) */
+  /* conflict: visualSpec says pills are 200–220px wide, computedStyle measured
+     198.594px — computedStyle wins (180px basis + flex growth to fill the row).
+     The 20px gutter is margin-right, not gap (computed gap is `normal`). */
   .help-links .help-links-pill {
     flex: 1 1 180px;
     width: auto;

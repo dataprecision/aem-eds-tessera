@@ -2,16 +2,20 @@
  * header block — site header (fragment scope)
  *
  * CONFLICT (spec.visualSpec vs spec.computedStyle): visualSpec describes a ~76px solid white
- * header; computedStyle measures 84px with a transparent root (white came from a fixed
+ * header; computedStyle measures 84px with a transparent root (the white came from a fixed
  * campaign <img> plate). computedStyle wins — root stays transparent at var(--nav-height),
- * .nav-wrapper paints white + bottom divider, theme plate dropped.
+ * .nav-wrapper paints white + bottom divider, the blank.png/'holi-image' theme plate is dropped.
  *
  * Content model (authored rows, key + value) — also compatible with the /nav fragment
  * (positional: brand, sections, tools, locale):
- *   brand    | logo link + image
- *   sections | nested <ul> — one level of dropdown only
- *   tools    | <ul> of utility links (consumer corner, recharge, login)
- *   locale   | <ul> of locale-prefixed links, rendered as a native <select>
+ *   brand    | logo link + image (animated GIF is fine, e.g. ind-gif02.gif)
+ *   sections | nested <ul> — exactly one level of dropdown
+ *   tools    | list of utility entries (CONSUMER CORNER, INSTANT RECHARGE, LOGIN)
+ *   locale   | list of 9 locale pairs (`hi-in | HINDI (हिंदी)`, `en/ENGLISH`, or locale-prefixed links)
+ *
+ * FLAG-TO-CONTENT-OWNER: the source LOGIN flyout (VC no. / OTP / Google sign-in) is sibling
+ * markup outside the header. This block only toggles the login trigger state (body class
+ * `login-popup-open` + `header:login-toggle` event); it never builds a login panel.
  */
 
 import { getMetadata } from '../../scripts/aem.js';
@@ -21,6 +25,11 @@ import { loadFragment } from '../fragment/fragment.js';
 const isDesktop = window.matchMedia('(min-width: 900px)');
 
 const PART_KEYS = ['brand', 'sections', 'tools', 'locale'];
+const DEFAULT_LOCALE = 'en';
+const NEW_TAB_HINT = /opens in a new tab/i;
+const NEW_TAB_SUFFIX = /\s*\(?\s*opens in a new tab\s*\)?\s*$/i;
+// `hi-in | HINDI (हिंदी)`, `en/ENGLISH`, `ta-in TAMIL( தமிழ்)`
+const LOCALE_PAIR = /^\s*([a-z]{2}(?:-[a-z]{2})?)\s*(?:[|:,/–—-]\s*|\s+)(.+?)\s*$/i;
 
 /**
  * top level nav items, for both the fragment markup and authored block rows
@@ -135,10 +144,18 @@ function readParts(container) {
   return parts;
 }
 
+/**
+ * FRAGMENT AUTOBLOCK TRAP: scripts.js builds this block with buildBlock('header', ''), so the
+ * block always arrives with one EMPTY row. Never test block.children.length — test for content.
+ * @param {Element} block the header block
+ */
+function hasAuthoredContent(block) {
+  if (block.querySelector('img, picture, a, ul, ol, select')) return true;
+  return !!block.textContent.trim();
+}
+
 async function getNavParts(block) {
-  // the boilerplate autoblock (buildBlock('header', '')) arrives with one EMPTY
-  // row — only treat the block as authored when it carries real content
-  if (block.textContent.trim() || block.querySelector('img, picture')) return readParts(block);
+  if (hasAuthoredContent(block)) return readParts(block);
   const navMeta = getMetadata('nav');
   const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
   const fragment = await loadFragment(navPath);
@@ -159,16 +176,50 @@ function buildBrand(content) {
   return brand;
 }
 
+/**
+ * Clean label of a top level item — the sr-only "opens in a new tab" hint is never part of it
+ * @param {Element} item the top level <li>
+ * @param {Element} link the top level anchor, if any
+ */
 function triggerLabel(item, link) {
-  if (link) return link.textContent.trim();
-  const clone = item.cloneNode(true);
-  clone.querySelectorAll('ul').forEach((list) => list.remove());
-  return clone.textContent.trim();
+  const source = link || item;
+  const clone = source.cloneNode(true);
+  clone.querySelectorAll('ul, ol').forEach((list) => list.remove());
+  clone.querySelectorAll('span').forEach((span) => {
+    if (NEW_TAB_HINT.test(span.textContent)) span.remove();
+  });
+  return clone.textContent.replace(NEW_TAB_SUFFIX, '').trim();
 }
 
 /**
- * Decorates a single top level nav item, converting dead/href-less anchors into
- * real buttons and wiring hover + click + keyboard opening (page-wide fix).
+ * Preserves (or re-creates) the source's sr-only "opens in a new tab" span on a trigger.
+ * Authors express it either as target="_blank" on the label link or as a trailing
+ * "(opens in a new tab)" in the label text.
+ * @param {Element} trigger the button element
+ * @param {Element} link the original anchor, if any
+ */
+function applyNewTabHint(trigger, link) {
+  let hint = [...trigger.querySelectorAll('span')].find((s) => NEW_TAB_HINT.test(s.textContent));
+
+  if (!hint) {
+    const textNode = [...trigger.childNodes]
+      .find((node) => node.nodeType === Node.TEXT_NODE && NEW_TAB_HINT.test(node.textContent));
+    if (textNode) textNode.textContent = textNode.textContent.replace(NEW_TAB_SUFFIX, '');
+    const newTab = !!textNode || (link && link.getAttribute('target') === '_blank');
+    if (newTab) {
+      hint = document.createElement('span');
+      hint.textContent = 'opens in a new tab';
+      trigger.append(hint);
+    }
+  }
+
+  if (hint) hint.className = 'nav-sr-only';
+}
+
+/**
+ * Decorates a single top level nav item. Href-less labels (MODIFY MY PACK, GET A CONNECTION)
+ * become real button-role triggers with aria-expanded instead of dead anchors, and hover +
+ * click + keyboard all open the single dropdown level.
  * @param {Element} item the top level <li>
  * @param {Element} sections the nav sections container
  */
@@ -197,6 +248,7 @@ function decorateNavItem(item, sections) {
       const firstLink = document.createElement('a');
       firstLink.href = href;
       firstLink.textContent = label;
+      if (link.getAttribute('target')) firstLink.target = link.getAttribute('target');
       first.append(firstLink);
       list.prepend(first);
     }
@@ -207,16 +259,22 @@ function decorateNavItem(item, sections) {
   trigger.className = 'nav-drop-trigger';
   trigger.setAttribute('aria-haspopup', 'true');
   trigger.setAttribute('aria-expanded', 'false');
-  trigger.textContent = label;
 
   if (link) {
+    // move the label nodes so authored spans (e.g. the sr-only hint) survive the upgrade
+    while (link.firstChild) trigger.append(link.firstChild);
     link.replaceWith(trigger);
   } else {
     [...item.childNodes].forEach((node) => {
-      if (node !== list) node.remove();
+      if (node !== list) {
+        trigger.append(node);
+      }
     });
     item.prepend(trigger);
   }
+
+  if (!trigger.textContent.trim()) trigger.textContent = label;
+  applyNewTabHint(trigger, link);
 
   // dropdown items: an <li> without a link is a non clickable group label
   list.querySelectorAll(':scope > li').forEach((child) => {
@@ -269,13 +327,62 @@ function localeFromHref(href) {
 }
 
 /**
- * Renders the authored locale link list as a native select. Changing it performs a
- * full page navigation to the locale prefixed path (matches source behaviour).
+ * Picks the authored entries of a content cell, preferring list items over rows over paragraphs
+ * @param {Element} content the authored cell
+ */
+function contentEntries(content) {
+  if (!content) return [];
+  const listItems = [...content.querySelectorAll('li')];
+  if (listItems.length) return listItems;
+  const rows = [...content.querySelectorAll('tr')];
+  if (rows.length) return rows;
+  const paragraphs = [...content.querySelectorAll('p')];
+  if (paragraphs.length) return paragraphs;
+  const children = [...content.children];
+  return children.length ? children : [content];
+}
+
+/**
+ * Reads the 9 locale pairs. Accepts locale prefixed links, two cell rows, or `code | LABEL` text.
+ * @param {Element} content the authored locale cell
+ */
+function parseLocaleOptions(content) {
+  const options = [];
+  const seen = new Set();
+  const add = (code, label) => {
+    const value = (code || '').trim().toLowerCase();
+    const text = (label || '').trim();
+    if (!value || !text || seen.has(value)) return;
+    seen.add(value);
+    options.push({ code: value, label: text });
+  };
+
+  contentEntries(content).forEach((entry) => {
+    const link = entry.querySelector ? entry.querySelector('a') : null;
+    if (link) {
+      add(localeFromHref(link.getAttribute('href')) || DEFAULT_LOCALE, link.textContent);
+      return;
+    }
+    const cells = entry.children ? [...entry.children].filter((c) => c.textContent.trim()) : [];
+    if (cells.length >= 2) {
+      add(cells[0].textContent, cells[1].textContent);
+      return;
+    }
+    const match = entry.textContent.match(LOCALE_PAIR);
+    if (match) add(match[1], match[2]);
+  });
+
+  return options;
+}
+
+/**
+ * Renders the authored locale list as a native <select> (matches the source #LanguageNavigator).
+ * Changing it performs a real full page navigation to the locale prefixed path.
  * @param {Element} content the authored locale cell
  */
 function buildLanguageSelect(content) {
-  const links = content ? [...content.querySelectorAll('a')] : [];
-  if (!links.length) return null;
+  const options = parseLocaleOptions(content);
+  if (!options.length) return null;
 
   const container = document.createElement('div');
   container.className = 'nav-language';
@@ -285,16 +392,14 @@ function buildLanguageSelect(content) {
   select.className = 'nav-language-select';
   select.setAttribute('aria-label', 'Select language');
 
-  const codes = [];
-  links.forEach((link) => {
-    const code = localeFromHref(link.getAttribute('href')) || 'en';
-    codes.push(code);
+  options.forEach(({ code, label }) => {
     const option = document.createElement('option');
     option.value = code;
-    option.textContent = link.textContent.trim();
+    option.textContent = label;
     select.append(option);
   });
 
+  const codes = options.map(({ code }) => code);
   const [defaultCode] = codes;
   const current = codes.find((code) => window.location.pathname.startsWith(`/${code}/`));
   select.value = current || defaultCode;
@@ -313,10 +418,10 @@ function buildLanguageSelect(content) {
 }
 
 /**
- * Login control: opens a slide-in panel, never navigates.
- * TODO(content owner): the source panel collects VC no. / OTP / Google sign-in. No endpoint
- * was supplied, so the panel ships with a link to the existing account page only.
- * @param {String} href account destination
+ * Login control: a trigger only. It never navigates and never builds a panel — it flips
+ * aria-expanded, toggles the body class the site login panel listens for, and emits
+ * `header:login-toggle` so out-of-block markup can react.
+ * @param {String} href optional account destination, exposed to listeners
  * @param {String} label authored label
  */
 function buildLoginControl(href, label) {
@@ -325,7 +430,9 @@ function buildLoginControl(href, label) {
   button.id = 'dishtv-LoginBtn';
   button.className = 'nav-login-button';
   button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-controls', 'nav-login-panel');
+  button.setAttribute('aria-haspopup', 'dialog');
+  if (href) button.dataset.loginHref = href;
+
   const icon = document.createElement('span');
   icon.className = 'nav-login-icon';
   icon.setAttribute('aria-hidden', 'true');
@@ -334,73 +441,38 @@ function buildLoginControl(href, label) {
   text.textContent = label;
   button.append(icon, text);
 
-  const panel = document.createElement('div');
-  panel.className = 'nav-login-panel';
-  panel.id = 'nav-login-panel';
-  panel.setAttribute('aria-hidden', 'true');
-
-  const dialog = document.createElement('div');
-  dialog.className = 'nav-login-dialog';
-  dialog.setAttribute('role', 'dialog');
-  dialog.setAttribute('aria-modal', 'true');
-  dialog.setAttribute('aria-label', label);
-
-  const close = document.createElement('button');
-  close.type = 'button';
-  close.className = 'nav-login-close';
-  close.setAttribute('aria-label', 'Close');
-
-  const title = document.createElement('p');
-  title.className = 'nav-login-title';
-  title.textContent = 'Login';
-
-  const copy = document.createElement('p');
-  copy.className = 'nav-login-copy';
-  copy.textContent = 'Sign in to manage your account, packs and recharges.';
-
-  const cta = document.createElement('a');
-  cta.className = 'button accent nav-login-cta';
-  cta.href = href;
-  cta.textContent = 'Continue to my account';
-
-  dialog.append(close, title, copy, cta);
-  panel.append(dialog);
-
-  const onKeydown = (e) => {
-    // eslint-disable-next-line no-use-before-define
-    if (e.code === 'Escape') closePanel();
+  const setState = (open) => {
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.body.classList.toggle('login-popup-open', open);
+    document.dispatchEvent(new CustomEvent('header:login-toggle', {
+      detail: { open, href: href || '' },
+    }));
   };
 
-  function closePanel() {
-    panel.setAttribute('aria-hidden', 'true');
-    button.setAttribute('aria-expanded', 'false');
-    document.body.classList.remove('login-popup-open');
-    document.body.style.overflowY = '';
+  const onKeydown = (e) => {
+    if (e.code !== 'Escape') return;
+    if (button.getAttribute('aria-expanded') !== 'true') return;
+    setState(false);
     window.removeEventListener('keydown', onKeydown);
     button.focus();
-  }
-
-  function openPanel() {
-    panel.setAttribute('aria-hidden', 'false');
-    button.setAttribute('aria-expanded', 'true');
-    document.body.classList.add('login-popup-open');
-    document.body.style.overflowY = 'hidden';
-    window.addEventListener('keydown', onKeydown);
-    close.focus();
-  }
+  };
 
   button.addEventListener('click', () => {
-    if (panel.getAttribute('aria-hidden') === 'false') closePanel();
-    else openPanel();
-  });
-  close.addEventListener('click', closePanel);
-  panel.addEventListener('click', (e) => {
-    if (e.target === panel) closePanel();
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    setState(open);
+    if (open) window.addEventListener('keydown', onKeydown);
+    else window.removeEventListener('keydown', onKeydown);
   });
 
-  return { button, panel };
+  return button;
 }
 
+/**
+ * Utility area: CONSUMER CORNER and INSTANT RECHARGE stay plain links (no modal in the source),
+ * LOGIN becomes the trigger button, and the locale list becomes the native select.
+ * @param {Element} toolsContent authored tools cell
+ * @param {Element} localeContent authored locale cell
+ */
 function buildTools(toolsContent, localeContent) {
   const tools = document.createElement('div');
   tools.className = 'nav-tools';
@@ -410,17 +482,23 @@ function buildTools(toolsContent, localeContent) {
   secondary.className = 'nav-tools-secondary';
   tools.append(primary, secondary);
 
-  let loginPanel = null;
-  const links = toolsContent ? [...toolsContent.querySelectorAll('a')] : [];
-  links.forEach((link) => {
-    const label = link.textContent.trim();
-    const href = link.getAttribute('href') || '';
-    link.classList.add('nav-tools-link');
+  let hasLogin = false;
+  contentEntries(toolsContent).forEach((entry) => {
+    const link = entry.tagName === 'A' ? entry : entry.querySelector('a');
+    const label = (link || entry).textContent.trim();
+    if (!label) return;
+    const href = link ? link.getAttribute('href') || '' : '';
+
     if (/login|sign in|my-account/i.test(`${label} ${href}`)) {
-      const login = buildLoginControl(href || '/my-account.html', label || 'LOGIN');
-      secondary.append(login.button);
-      loginPanel = login.panel;
-    } else if (/recharge/i.test(label)) {
+      if (hasLogin) return;
+      hasLogin = true;
+      secondary.append(buildLoginControl(href, label || 'LOGIN'));
+      return;
+    }
+    if (!link) return;
+
+    link.classList.add('nav-tools-link');
+    if (/recharge/i.test(label)) {
       link.classList.add('nav-recharge');
       secondary.append(link);
     } else if (/consumer/i.test(label)) {
@@ -434,7 +512,7 @@ function buildTools(toolsContent, localeContent) {
   const language = buildLanguageSelect(localeContent);
   if (language) primary.append(language);
 
-  return { element: tools, loginPanel };
+  return tools;
 }
 
 /**
@@ -450,7 +528,7 @@ export default async function decorate(block) {
 
   const brand = buildBrand(parts.brand);
   const navSections = buildSections(parts.sections);
-  const { element: tools, loginPanel } = buildTools(parts.tools, parts.locale);
+  const tools = buildTools(parts.tools, parts.locale);
 
   // hamburger for mobile
   const hamburger = document.createElement('div');
@@ -471,5 +549,4 @@ export default async function decorate(block) {
   navWrapper.className = 'nav-wrapper';
   navWrapper.append(nav);
   block.append(navWrapper);
-  if (loginPanel) block.append(loginPanel);
 }

@@ -10,9 +10,8 @@
  *
  * Conflict resolved: visualSpec described icons "stacked above a centered caption"; measured
  * behaviour/computedStyle show icon-left of a left-aligned caption (flex row) — measurement wins.
- * Conflict resolved: visualSpec said #303030 / ~7px radius; computedStyle measured rgb(51,51,51)
- * and 8px radius — measurement wins (maps to --dark-color / --radius-m).
- * Benefit items are intentionally static: no anchors, buttons, roles, tabindex or hover state.
+ * Benefit items and feature labels are intentionally static: no anchors, buttons, roles,
+ * tabindex or hover state (measured: 0 links, cursor auto, click is a no-op).
  */
 
 const cleanText = (el) => el.textContent.replace(/\u00a0/g, ' ').trim();

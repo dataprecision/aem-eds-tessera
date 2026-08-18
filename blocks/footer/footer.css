@@ -6,8 +6,9 @@
  *   top padding is normalized here (visualSpec "generous spacing" still honoured).
  * - measured ::placeholder rgb(117,117,117) is not a brand token; nearest token
  *   --muted-color is used per the no-new-palette rule.
- * - source declared transition:0.5s but never transitioned anything (dead) — replaced
- *   with real hover/focus transitions.
+ * - source declared transition:0.5s but nothing ever transitioned (dead) and there are
+ *   ZERO :hover rules site-wide — so NO hover color/decoration/opacity/scale change is
+ *   defined here either. Keyboard focus is covered by the global :focus-visible rule.
  */
 
 footer {
@@ -123,14 +124,7 @@ footer {
   font-weight: 500;
   line-height: 21px;
   text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-/* accessibility floor: source had zero :hover rules site-wide */
-.footer a:hover,
-.footer a:focus-visible {
-  color: var(--background-color);
-  text-decoration: underline;
+  cursor: pointer;
 }
 
 .footer hr {
@@ -189,18 +183,29 @@ footer {
   border: 0;
   background: none;
   cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.footer .footer-dealer-submit:hover,
-.footer .footer-dealer-submit:focus-visible {
-  transform: translateX(3px);
 }
 
 .footer .footer-dealer-arrow {
   display: block;
   width: 23px;
   height: 18px;
+}
+
+/* only used when the author omits the arrow asset */
+.footer .footer-dealer-arrow-fallback {
+  position: relative;
+}
+
+.footer .footer-dealer-arrow-fallback::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--brand-accent);
+  border-right: 2px solid var(--brand-accent);
+  transform: translateY(-50%) rotate(45deg);
 }
 
 .footer .footer-dealer-error {
@@ -229,13 +234,7 @@ footer {
   width: 37px;
   height: 37px;
   border-radius: 50%;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.footer .footer-social-link:hover,
-.footer .footer-social-link:focus-visible {
-  transform: scale(1.1);
-  opacity: 0.85;
+  cursor: pointer;
 }
 
 .footer .footer-social-icon {
@@ -289,6 +288,7 @@ footer {
   font-weight: 400;
   line-height: 15px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 @media (width >= 600px) {
