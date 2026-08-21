@@ -1,55 +1,38 @@
 /*
- * Conflicts resolved (computedStyle wins on exact values):
- * background #fbfbfb measured vs #fafafa in visualSpec; copyright 12px measured vs ~13px;
- * column links weight 400 measured vs "semibold" in visualSpec.
- * Icon fill (#a8acb9) lives in the /icons/*.svg asset — an <img>-rendered icon cannot be recoloured
- * from here, which keeps the icon swappable by a content editor.
- * The measured .follow_us hover rules were dead CSS on the source and are intentionally dropped.
+ * Footer fragment zones. Structural classes (footer-top, footer-brand, footer-column,
+ * footer-legal, footer-policy, footer-copyright) are applied by footer.js.
+ * CONFLICT: visualSpec says headings are "18px bold" / bg "#fafafa"; computedStyle
+ * measured weight 600 and rgb(251,251,251) — computedStyle wins.
  */
 
 footer {
+  /* block-local measured values, not brand tokens */
   --footer-bg: #fbfbfb;
   --footer-rule: #d3d5dc;
-  --footer-link-color: #000;
-  --footer-icon-size: 25px;
+  --footer-ink: #000;
 
   background-color: var(--footer-bg);
+  font-size: var(--body-font-size-xs);
 }
 
-.footer .footer-inner {
+footer .footer > div {
   max-width: var(--content-width);
-  margin: 0 auto;
-
-  /* measured 50px top/bottom @1920 = 2.60417vw, 15px gutters */
-  padding: max(32px, 2.60417vw) 15px;
+  margin: auto;
+  padding: 50px 15px;
 }
 
-.footer ul {
+footer .footer ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* upper zone: brand/social + link columns */
-.footer .footer-top {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: max(32px, 4.16667vw);
-  border-bottom: 1px solid var(--footer-rule);
-}
-
-.footer .footer-brand {
-  flex: 0 1 358px; /* measured 357.688px */
-  padding-right: 24px;
-}
-
-.footer .footer-nav {
-  flex: 0 1 auto;
-}
-
-.footer .footer-top :is(h1, h2, h3, h4, h5, h6) {
+footer .footer h1,
+footer .footer h2,
+footer .footer h3,
+footer .footer h4,
+footer .footer h5,
+footer .footer h6 {
   margin: 0 0 15px;
   color: var(--brand-accent);
   font-size: 18px;
@@ -58,22 +41,46 @@ footer {
   text-transform: capitalize;
 }
 
-.footer .footer-brand img {
+/* upper zone: brand/social + three link columns */
+footer .footer .footer-top {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: clamp(32px, 4.167vw, 80px);
+  border-bottom: 1px solid var(--footer-rule);
+}
+
+footer .footer .footer-brand-group {
+  flex: 0 1 358px;
+}
+
+footer .footer .footer-column {
+  flex: 0 1 auto;
+}
+
+footer .footer .footer-brand img {
   width: 175px;
+  max-width: 100%;
   height: auto;
   margin-bottom: 32px;
 }
 
-.footer .footer-brand p {
+footer .footer .footer-brand p {
   margin: 0 0 24px;
   color: var(--text-color);
   font-size: 14px;
   line-height: 21px;
 }
 
-.footer .footer-top a:any-link {
+footer .footer .footer-column li {
+  margin-bottom: 2px;
+}
+
+footer .footer .footer-brand a:any-link,
+footer .footer .footer-column a:any-link {
   display: inline-block;
-  color: var(--footer-link-color);
+  color: var(--footer-ink);
   font-size: 14px;
   font-weight: 400;
   line-height: 21px;
@@ -82,35 +89,69 @@ footer {
   transition: color 0.3s;
 }
 
-.footer .footer-top a:hover,
-.footer .footer-top a:focus-visible {
+footer .footer .footer-brand a:hover,
+footer .footer .footer-column a:hover,
+footer .footer .footer-column a:focus-visible {
   color: var(--brand-accent);
   text-decoration: none;
 }
 
-/* social row */
-.footer .footer-social {
+/* social icons — /icons/<name>.svg, author-swappable. The row is a row whether or not
+   the glyph assets exist: footer.js keeps the authored label visible as a fallback and
+   only collapses it (.footer-social-iconic) once the SVG actually paints. */
+footer .footer .footer-social {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  align-items: center;
   gap: 15px;
-  max-width: 238px; /* measured 238.453px */
-  margin-bottom: 8px;
+  margin-top: 4px;
 }
 
-.footer .footer-social .icon,
-.footer .footer-social .icon img,
-.footer .footer-social .icon svg {
-  width: var(--footer-icon-size);
-  height: var(--footer-icon-size);
+footer .footer .footer-social li {
+  margin: 0;
+}
+
+footer .footer .footer-social a:any-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+footer .footer .footer-social .icon {
+  flex: 0 0 auto;
+  width: 25px;
+  height: 25px;
+}
+
+footer .footer .footer-social .icon img {
+  width: 100%;
+  height: 100%;
+}
+
+footer .footer .footer-social .footer-social-label {
+  font-size: 14px;
+  line-height: 21px;
+}
+
+footer .footer .footer-social a.footer-social-iconic .footer-social-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* legal paragraph */
-.footer .footer-legal {
+footer .footer .footer-legal {
   padding-top: 10px;
 }
 
-.footer .footer-legal p {
+footer .footer .footer-legal p {
   margin: 0;
   color: var(--text-color);
   font-size: 12px;
@@ -119,29 +160,35 @@ footer {
   text-align: center;
 }
 
-.footer .footer-legal a:any-link,
-.footer .footer-legal a:hover {
+footer .footer .footer-legal sup {
+  font-size: 0.7em;
+  line-height: 0;
+}
+
+/* measured: mailto hover keeps rgb(73,73,73) — no state change */
+footer .footer .footer-legal a:any-link,
+footer .footer .footer-legal a:hover {
   color: var(--text-color);
   text-decoration: none;
 }
 
-/* policy link row — separators are pseudo-elements, never authored characters */
-.footer .footer-policy {
+/* policy row — separators are pseudo-elements, never authored characters */
+footer .footer .footer-policy {
   padding: 16px 0;
 }
 
-.footer .footer-policy ul {
+footer .footer .footer-policy ul {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
 }
 
-.footer .footer-policy ul:empty {
+footer .footer .footer-policy ul:empty {
   display: none;
 }
 
-.footer .footer-policy li {
+footer .footer .footer-policy li {
   position: relative;
   font-size: 14px;
   font-weight: 400;
@@ -149,7 +196,21 @@ footer {
   text-align: center;
 }
 
-.footer .footer-policy li::after {
+footer .footer .footer-policy li a:any-link {
+  padding: 0 10px;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+footer .footer .footer-policy li a:hover,
+footer .footer .footer-policy li a:focus-visible {
+  color: var(--brand-accent);
+}
+
+footer .footer .footer-policy li::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -159,93 +220,47 @@ footer {
   transform: translateY(-50%);
 }
 
-.footer .footer-policy li:last-child::after {
+footer .footer .footer-policy li:last-child::after {
   display: none;
 }
 
-.footer .footer-policy a:any-link {
-  padding: 0 10px;
-  color: var(--text-color);
-  font-size: 14px;
-  font-weight: 400;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.footer .footer-policy a:hover,
-.footer .footer-policy a:focus-visible {
-  color: var(--brand-accent);
-}
-
 /* copyright */
-.footer .footer-copyright,
-.footer .footer-copyright p {
+footer .footer .footer-copyright p {
   margin: 0;
-  color: var(--footer-link-color);
+  color: var(--footer-ink);
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
   text-align: left;
 }
 
-/* mobile: columns collapse into JS-driven disclosures */
+@media (width <= 899px) {
+  footer .footer .footer-top {
+    flex-wrap: wrap;
+    gap: 32px;
+  }
+
+  footer .footer .footer-brand-group {
+    flex: 1 1 100%;
+  }
+
+  footer .footer .footer-column {
+    flex: 1 1 30%;
+  }
+}
+
 @media (width <= 767px) {
-  .footer .footer-top {
-    flex-direction: column;
-    gap: 0;
+  footer .footer > div {
+    padding: 32px 16px;
   }
 
-  .footer .footer-brand {
-    flex: 1 1 auto;
-    padding-right: 0;
+  /* the source hid these lists behind a sprite arrow with no toggle; the dead
+     affordance is removed and the columns simply stack (acceptance 6 + 7). */
+  footer .footer .footer-column {
+    flex: 1 1 100%;
   }
 
-  .footer .footer-nav {
-    padding: 12px 0;
-    border-top: 1px solid var(--footer-rule);
-  }
-
-  .footer .footer-nav [aria-expanded] {
-    position: relative;
-    margin: 0;
-    padding-right: 28px;
-    cursor: pointer;
-  }
-
-  .footer .footer-nav [aria-expanded]:focus-visible {
-    outline: 2px solid var(--brand-accent);
-    outline-offset: 2px;
-  }
-
-  .footer .footer-nav [aria-expanded]::after {
-    content: "";
-    position: absolute;
-    top: 0.4em;
-    right: 6px;
-    width: 9px;
-    height: 9px;
-    border-right: 2px solid currentcolor;
-    border-bottom: 2px solid currentcolor;
-    transform: rotate(45deg);
-    transition: transform 0.3s;
-  }
-
-  .footer .footer-nav [aria-expanded="true"]::after {
-    transform: rotate(-135deg);
-  }
-
-  .footer .footer-nav ul {
-    display: none;
-  }
-
-  .footer .footer-nav-open ul {
-    display: block;
-    padding-top: 12px;
-  }
-
-  .footer .footer-copyright,
-  .footer .footer-copyright p {
-    margin: 40px 0 0;
-    text-align: center;
+  footer .footer .footer-policy ul {
+    gap: 8px 10px;
   }
 }
