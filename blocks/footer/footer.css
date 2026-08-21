@@ -3,6 +3,12 @@
  * footer-legal, footer-policy, footer-copyright) are applied by footer.js.
  * CONFLICT: visualSpec says headings are "18px bold" / bg "#fafafa"; computedStyle
  * measured weight 600 and rgb(251,251,251) — computedStyle wins.
+ *
+ * TOKEN FALLBACKS: the deployed styles/styles.css is the stock boilerplate — it defines
+ * neither --brand-accent nor --content-width, and its --text-color is #131313. Measured on
+ * the reference: headings rgb(240,90,48), container 1320px, body copy rgb(73,73,73). Every
+ * brand value below therefore carries a block-local measured fallback so the footer is
+ * branded with or without the global token layer; the global cure is still owed.
  */
 
 footer {
@@ -10,13 +16,16 @@ footer {
   --footer-bg: #fbfbfb;
   --footer-rule: #d3d5dc;
   --footer-ink: #000;
+  --footer-text: #494949;
+  --footer-accent: var(--brand-accent, #f05a30);
+  --footer-width: var(--content-width, 1320px);
 
   background-color: var(--footer-bg);
-  font-size: var(--body-font-size-xs);
+  font-size: var(--body-font-size-xs, 14px);
 }
 
 footer .footer > div {
-  max-width: var(--content-width);
+  max-width: var(--footer-width);
   margin: auto;
   padding: 50px 15px;
 }
@@ -34,7 +43,7 @@ footer .footer h4,
 footer .footer h5,
 footer .footer h6 {
   margin: 0 0 15px;
-  color: var(--brand-accent);
+  color: var(--footer-accent);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
@@ -68,7 +77,7 @@ footer .footer .footer-brand img {
 
 footer .footer .footer-brand p {
   margin: 0 0 24px;
-  color: var(--text-color);
+  color: var(--footer-text);
   font-size: 14px;
   line-height: 21px;
 }
@@ -92,11 +101,13 @@ footer .footer .footer-column a:any-link {
 footer .footer .footer-brand a:hover,
 footer .footer .footer-column a:hover,
 footer .footer .footer-column a:focus-visible {
-  color: var(--brand-accent);
+  color: var(--footer-accent);
   text-decoration: none;
 }
 
-/* social icons — /icons/<name>.svg, author-swappable */
+/* social icons — /icons/<name>.svg, author-swappable. Links authored as plain labels are
+   matched to an icon by href in footer.js; if the asset 404s the label is restored and the
+   row is tagged .footer-social-labels. */
 footer .footer .footer-social {
   display: flex;
   flex-wrap: wrap;
@@ -109,6 +120,11 @@ footer .footer .footer-social li {
   margin: 0;
 }
 
+footer .footer .footer-social a:any-link {
+  display: flex;
+  align-items: center;
+}
+
 footer .footer .footer-social .icon {
   width: 25px;
   height: 25px;
@@ -119,6 +135,11 @@ footer .footer .footer-social .icon img {
   height: 100%;
 }
 
+/* label fallback: still one horizontal row, never a stacked word list */
+footer .footer .footer-social-labels {
+  gap: 10px 15px;
+}
+
 /* legal paragraph */
 footer .footer .footer-legal {
   padding-top: 10px;
@@ -126,7 +147,7 @@ footer .footer .footer-legal {
 
 footer .footer .footer-legal p {
   margin: 0;
-  color: var(--text-color);
+  color: var(--footer-text);
   font-size: 12px;
   font-weight: 300;
   line-height: 18px;
@@ -141,7 +162,7 @@ footer .footer .footer-legal sup {
 /* measured: mailto hover keeps rgb(73,73,73) — no state change */
 footer .footer .footer-legal a:any-link,
 footer .footer .footer-legal a:hover {
-  color: var(--text-color);
+  color: var(--footer-text);
   text-decoration: none;
 }
 
@@ -171,7 +192,7 @@ footer .footer .footer-policy li {
 
 footer .footer .footer-policy li a:any-link {
   padding: 0 10px;
-  color: var(--text-color);
+  color: var(--footer-text);
   font-size: 14px;
   font-weight: 400;
   text-decoration: none;
@@ -180,7 +201,7 @@ footer .footer .footer-policy li a:any-link {
 
 footer .footer .footer-policy li a:hover,
 footer .footer .footer-policy li a:focus-visible {
-  color: var(--brand-accent);
+  color: var(--footer-accent);
 }
 
 footer .footer .footer-policy li::after {
@@ -189,7 +210,7 @@ footer .footer .footer-policy li::after {
   top: 50%;
   right: 0;
   height: 15px;
-  border-right: 1px solid var(--text-color);
+  border-right: 1px solid var(--footer-text);
   transform: translateY(-50%);
 }
 
