@@ -1,0 +1,227 @@
+.benefits-carousel {
+  --bc-visible: 1;
+  --bc-gap: 20px;
+  --bc-pad-x: 20px;
+  --bc-pad-y: 32px;
+  --bc-radius: 24px;
+  --bc-nav-size: 44px;
+  --bc-nav-inset: 2px;
+}
+
+.benefits-carousel .benefits-carousel-panel {
+  position: relative;
+  box-sizing: border-box;
+  max-width: var(--content-width-narrow);
+  margin: 0 auto;
+  padding: var(--bc-pad-y) var(--bc-pad-x);
+  border-radius: var(--bc-radius);
+  background-color: var(--light-color);
+}
+
+.benefits-carousel .benefits-carousel-heading {
+  margin: 0 0 24px;
+  font-size: var(--heading-font-size-l);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.benefits-carousel .benefits-carousel-stage {
+  position: relative;
+}
+
+.benefits-carousel .benefits-carousel-viewport {
+  overflow: hidden;
+}
+
+.benefits-carousel .benefits-carousel-track {
+  display: flex;
+  gap: var(--bc-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.4s ease;
+  will-change: transform;
+}
+
+.benefits-carousel .benefits-carousel-item {
+  box-sizing: border-box;
+  flex: 0 0 calc((100% - (var(--bc-visible) - 1) * var(--bc-gap)) / var(--bc-visible));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* replicate-as-is: items are plain content — no hover, no pointer, no click target */
+}
+
+.benefits-carousel .benefits-carousel-item-icon img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.benefits-carousel .benefits-carousel-item-title {
+  margin: 32px 0 20px;
+  font-size: var(--heading-font-size-m);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.benefits-carousel .benefits-carousel-item-copy {
+  font-size: var(--body-font-size-xs);
+  line-height: 1.5;
+  color: var(--text-color);
+}
+
+.benefits-carousel .benefits-carousel-item-copy p {
+  margin: 0 0 12px;
+}
+
+.benefits-carousel .benefits-carousel-item-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.benefits-carousel .benefits-carousel-item-copy a:any-link {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+.benefits-carousel .benefits-carousel-item-copy a:hover,
+.benefits-carousel .benefits-carousel-item-copy a:focus-visible {
+  text-decoration: underline;
+}
+
+/* nav circles: measured at -79.5px, which lands inside the panel's 76.8px
+   gutter — anchored to the gutter so they never overflow the section */
+.benefits-carousel .benefits-carousel-nav button {
+  position: absolute;
+  top: 50%;
+  width: var(--bc-nav-size);
+  height: var(--bc-nav-size);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 100%;
+  background-color: var(--surface-muted);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: opacity 0.2s, background-color 0.2s;
+  z-index: 1;
+}
+
+.benefits-carousel .benefits-carousel-prev {
+  left: var(--bc-nav-inset);
+}
+
+.benefits-carousel .benefits-carousel-next {
+  right: var(--bc-nav-inset);
+}
+
+.benefits-carousel .benefits-carousel-nav button:hover,
+.benefits-carousel .benefits-carousel-nav button:focus-visible {
+  background-color: var(--light-color);
+}
+
+.benefits-carousel .benefits-carousel-nav button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* chevron drawn in CSS (no inline SVG in block JS) */
+.benefits-carousel .benefits-carousel-nav button::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 2px);
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--dark-color);
+  border-bottom: 0;
+  border-left: 0;
+  transform: translate(-50%, -50%) rotate(-135deg);
+}
+
+.benefits-carousel .benefits-carousel-next::after {
+  left: calc(50% - 2px);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.benefits-carousel .benefits-carousel-disclaimer {
+  max-width: 909px;
+  margin: 32px auto 0;
+  /* measured #e3e3e3 on a #f3f3f3 panel is unreadable — brand text colour used */
+  color: var(--text-color);
+  font-size: var(--body-font-size-s);
+  line-height: 1.5;
+}
+
+.benefits-carousel .benefits-carousel-disclaimer p {
+  margin: 0 0 12px;
+}
+
+.benefits-carousel .benefits-carousel-disclaimer a:any-link {
+  color: var(--link-color);
+  overflow-wrap: anywhere;
+}
+
+.benefits-carousel .benefits-carousel-disclaimer-actions {
+  margin: 0;
+}
+
+.benefits-carousel .benefits-carousel-toggle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link-color);
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.benefits-carousel .benefits-carousel-toggle:hover,
+.benefits-carousel .benefits-carousel-toggle:focus-visible {
+  color: var(--link-hover-color);
+  text-decoration: underline;
+}
+
+@media (width >= 600px) {
+  .benefits-carousel {
+    --bc-visible: 2;
+    --bc-pad-x: 40px;
+    --bc-pad-y: 40px;
+    --bc-radius: 48px;
+  }
+}
+
+@media (width >= 900px) {
+  .benefits-carousel {
+    --bc-visible: 3;
+    --bc-pad-x: 76.8px;
+    --bc-pad-y: 48px;
+    --bc-radius: 90px;
+    --bc-nav-size: 65px;
+    --bc-nav-inset: 6px;
+  }
+
+  .benefits-carousel .benefits-carousel-heading {
+    margin-bottom: 48px;
+  }
+
+  .benefits-carousel .benefits-carousel-item-title {
+    margin: 64px 0 48px;
+  }
+
+  .benefits-carousel .benefits-carousel-disclaimer {
+    margin-top: 64px;
+  }
+}
+
+@media (width >= 1200px) {
+  .benefits-carousel {
+    --bc-visible: 4;
+  }
+}

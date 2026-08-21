@@ -1,0 +1,239 @@
+/*
+ * FAQ block — white panel, single-open rows, "view more" pill straddling the panel edge.
+ * Measured evidence: rows have NO hover state; only cursor:pointer signals clickability.
+ * Type/colour values below come from spec.computedStyle; palette comes from styles.css tokens.
+ */
+
+.faq {
+  --faq-rule: var(--surface-muted);
+  --faq-control-size: 36px;
+  --faq-panel-radius: 50px;
+
+  padding-bottom: 30px;
+}
+
+.faq .faq-panel {
+  position: relative;
+  max-width: var(--content-width-narrow);
+  margin: 0 auto;
+  padding: 16px 20px 48px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-color);
+  box-shadow: 0 10px 30px 0 rgb(22 43 117 / 10%);
+}
+
+.faq .faq-title {
+  margin: 12px 0 32px;
+  color: var(--dark-color);
+  font-family: var(--heading-font-family);
+  font-size: var(--heading-font-size-s);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* rows */
+.faq .faq-item {
+  padding: 16px 0;
+  border-bottom: 2px solid var(--faq-rule);
+}
+
+.faq .faq-item[hidden] {
+  display: none;
+}
+
+.faq .faq-item-label {
+  margin: 0;
+  font: inherit;
+}
+
+.faq .faq-item-toggle {
+  display: grid;
+  grid-template-columns: 9fr auto;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dark-color);
+  font-family: var(--heading-font-family);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
+
+.faq .faq-item[data-expanded="true"] .faq-item-toggle {
+  color: var(--brand-accent);
+}
+
+/* CSS-drawn chevron in a circle — no raster arrows ported from the source */
+.faq .faq-item-chevron {
+  position: relative;
+  justify-self: end;
+  width: var(--faq-control-size);
+  height: var(--faq-control-size);
+  border-radius: 100%;
+  background-color: var(--light-color);
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.faq .faq-item-chevron::after {
+  content: '';
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border: solid var(--dark-color);
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.faq .faq-item[data-expanded="true"] .faq-item-chevron {
+  background-color: var(--brand-accent);
+  transform: rotate(-180deg);
+}
+
+.faq .faq-item[data-expanded="true"] .faq-item-chevron::after {
+  border-color: var(--background-color);
+}
+
+.faq .faq-item-toggle:focus-visible,
+.faq .faq-more-toggle:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 4px;
+}
+
+/* answer — animated via grid-template-rows so it collapses without display:none */
+.faq .faq-item-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows 0.25s ease-in-out, visibility 0.25s;
+}
+
+.faq .faq-item[data-expanded="true"] .faq-item-body {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+
+.faq .faq-item-body-inner {
+  overflow: hidden;
+  margin: 10px 0 0;
+}
+
+.faq .faq-item-body p {
+  margin: 0 0 24px;
+  color: var(--dark-color);
+  font-family: var(--heading-font-family); /* measured: block uses Montserrat for answers too */
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.faq .faq-item-body p:last-child {
+  margin-bottom: 8px;
+}
+
+/* answers authored with and without <strong> must render identically */
+.faq .faq-item-body strong {
+  font-weight: inherit;
+}
+
+/* view more / view less */
+.faq .faq-more {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.faq .faq-more-toggle {
+  position: relative;
+  display: inline-block;
+  padding: 12px 40px 12px 20px;
+  border: 1px solid var(--brand-accent);
+  border-radius: var(--radius-pill);
+  background-color: var(--background-color);
+  color: var(--heading-alt-color);
+  font-family: var(--heading-font-family);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 14px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.faq .faq-more-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  width: 7px;
+  height: 7px;
+  border: solid currentcolor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.2s ease-in-out, right 0.3s;
+}
+
+.faq .faq-more-toggle[aria-expanded="true"]::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+
+.faq .faq-more-toggle:hover {
+  color: var(--dark-color);
+}
+
+.faq .faq-more-toggle:hover::after {
+  right: 16px;
+}
+
+/* variant: rows sit on the section background, no panel chrome */
+.faq.flush {
+  padding-bottom: 0;
+}
+
+.faq.flush .faq-panel {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+@media (width >= 900px) {
+  .faq .faq-panel {
+    padding: 20px 70px 60px;
+    border-radius: var(--faq-panel-radius);
+  }
+
+  .faq .faq-title {
+    margin: 28px 0 48px;
+    font-size: 24px;
+  }
+
+  .faq .faq-item {
+    padding: 16px 2vw;
+  }
+
+  .faq .faq-item-body-inner {
+    margin: 10px 60px 0 20px;
+  }
+
+  /* pill deliberately straddles the panel's lower edge (measured bottom: -15px) */
+  .faq .faq-more {
+    position: absolute;
+    right: 0;
+    bottom: -15px;
+    left: 0;
+    margin-top: 0;
+  }
+
+  .faq.flush .faq-more {
+    position: static;
+    margin-top: 24px;
+  }
+}

@@ -25,3 +25,98 @@
   aspect-ratio: 4 / 3;
   object-fit: cover;
 }
+
+/* benefits variant: flat 4-up icon + heading + copy grid.
+   Conflict resolved: visualSpec estimates ~1110px width / ~50px column gaps,
+   computedStyle measured a 1060px track with 20px gutters — computedStyle wins. */
+.cards.benefits > ul {
+  grid-template-columns: 1fr;
+  gap: 32px 20px;
+  max-width: 1060px;
+  margin: 0 auto;
+}
+
+@media (width >= 600px) {
+  .cards.benefits > ul {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (width >= 900px) {
+  .cards.benefits > ul {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* measured: border 0, box-shadow none, background transparent, no hover state */
+.cards.benefits > ul > li {
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+}
+
+.cards.benefits .cards-card-image {
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+
+.cards.benefits > ul > li img {
+  width: auto;
+  max-width: 100%;
+  height: 60px;
+  aspect-ratio: auto;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.cards.benefits .cards-card-body {
+  margin: 0;
+}
+
+.cards.benefits .cards-card-body h3 {
+  margin: 16px 0;
+  color: var(--text-color);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cards.benefits .cards-card-body p {
+  margin: 0 0 8px;
+  font-size: var(--body-font-size-xs);
+  line-height: 1.5;
+}
+
+.cards.benefits .cards-card-body p:last-child {
+  margin-bottom: 0;
+}
+
+.cards.benefits .cards-card-body a:any-link {
+  display: inline;
+  text-decoration: none;
+}
+
+.cards.benefits .cards-card-more[hidden] {
+  display: none;
+}
+
+.cards.benefits .cards-read-more {
+  display: inline-block;
+  margin: 8px 0 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--link-color);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cards.benefits .cards-read-more:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}

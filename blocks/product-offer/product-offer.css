@@ -1,0 +1,199 @@
+/*
+ * product-offer — unequal three-column product row.
+ * Widths, divider, pill CTAs and offer-line animation are all measured values
+ * from spec.computedStyle; palette/radius come from styles.css tokens.
+ */
+
+.product-offer {
+  /* measured-only values with no global token equivalent */
+  --product-offer-divider-color: #858585; /* measured rgb(133, 133, 133) */
+  --product-offer-offer-heading-color: #0d0d0d; /* measured rgb(13, 13, 13) */
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.product-offer > div {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 0 12px;
+}
+
+/* media column ---------------------------------------------------------- */
+
+.product-offer-media img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: contain; /* measured: 337 x 220, contained */
+}
+
+/* measured: image is not interactive — no cursor, transform or filter change */
+.product-offer-media img:hover {
+  transform: none;
+  filter: none;
+  opacity: 1;
+}
+
+/* content column -------------------------------------------------------- */
+
+.product-offer-content h2 {
+  margin: 0 0 16px;
+  color: var(--text-color);
+  font-size: 22px; /* measured; overrides the global h2 scale */
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.product-offer-content p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400; /* measured 100 resolves to the lightest available face */
+  line-height: 1.5;
+}
+
+/* offer column ---------------------------------------------------------- */
+
+.product-offer-offer h4 {
+  margin: 0;
+  color: var(--product-offer-offer-heading-color);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.product-offer-offer p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.product-offer-line {
+  padding-top: 10px;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+  text-shadow: rgb(0 0 0 / 30%) 2px 2px 4px;
+}
+
+@keyframes product-offer-blink {
+  0%,
+  100% {
+    color: var(--text-color);
+    text-shadow: rgb(0 0 0 / 30%) 2px 2px 4px;
+  }
+
+  50% {
+    color: var(--brand-accent);
+    text-shadow: rgb(255 235 59 / 50%) 2px 2px 8px;
+  }
+}
+
+/* Fix per page-wide policy: blink only when motion is welcome (WCAG 2.2.2). */
+@media (prefers-reduced-motion: no-preference) {
+  .product-offer-line {
+    animation: product-offer-blink 1s infinite;
+  }
+}
+
+/* CTAs ------------------------------------------------------------------ */
+
+.product-offer .button-wrapper {
+  margin: 0;
+}
+
+.product-offer a.button.accent {
+  position: relative;
+  margin-top: 48px;
+  border-width: 0; /* measured height 47px = 12 + 22.5 + 12 */
+  border-radius: var(--radius-pill);
+  padding: 12px 40px 12px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/*
+ * Arrow is drawn in CSS rather than inlined SVG (EDS icon policy); it inherits
+ * the button text colour, replacing the source's white next-arrow sprite.
+ */
+.product-offer a.button.accent::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 14%;
+  width: 18px;
+  height: 8px;
+  background-color: currentcolor;
+  clip-path: polygon(0 42%, 66% 42%, 66% 0, 100% 50%, 66% 100%, 66% 58%, 0 58%);
+  transform: translateY(-50%);
+  transition: right 0.3s;
+}
+
+/* measured: hover changes nothing but the arrow position */
+.product-offer a.button.accent:hover,
+.product-offer a.button.accent:focus-visible {
+  border-color: var(--brand-accent);
+  background-color: var(--brand-accent);
+  color: var(--background-color);
+  text-decoration: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.product-offer a.button.accent:hover::after,
+.product-offer a.button.accent:focus-visible::after {
+  right: 8%;
+}
+
+/* below md: offer column halves and gains a top margin (measured col-6 mt-3) */
+.product-offer-offer {
+  width: 50%;
+  margin-top: 16px;
+}
+
+/* md and up ------------------------------------------------------------- */
+
+@media (width >= 900px) {
+  .product-offer-media {
+    width: 33.333%; /* measured 361px of 1084px */
+  }
+
+  .product-offer-content {
+    position: relative;
+    width: 41.667%; /* measured 452px of 1084px */
+    padding-right: 54px;
+    padding-left: 32px;
+  }
+
+  /* divider is a pseudo-element on the content column, not a border on the offer column */
+  .product-offer-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 25px;
+    height: 100%;
+    border-right: 1px solid var(--product-offer-divider-color);
+  }
+
+  .product-offer-offer {
+    width: 25%; /* measured 271px of 1084px */
+    margin-top: 0;
+  }
+}
+
+/* variants -------------------------------------------------------------- */
+
+.product-offer.no-divider .product-offer-content::after {
+  content: none;
+}
+
+@media (width >= 900px) {
+  .product-offer.media-right .product-offer-media {
+    order: 4;
+  }
+}

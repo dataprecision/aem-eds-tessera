@@ -1,0 +1,166 @@
+/* application-guidelines — measured values from spec.computedStyle win over the visual estimate
+   (numeral 240px measured vs ~185px estimated; label 19px measured vs ~20px estimated). */
+
+.application-guidelines {
+  padding: 3.5rem 0; /* measured .wrapper 56px block padding @390; inline padding comes from the section */
+}
+
+/* header */
+.application-guidelines .application-guidelines-header :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.application-guidelines .application-guidelines-header p {
+  margin: 16px 0 48px;
+  max-width: 720px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.application-guidelines .application-guidelines-header p:last-child {
+  margin-bottom: 48px;
+}
+
+/* step row — measured: justify-content flex-start, no horizontal gutter, columns flush */
+.application-guidelines .application-guidelines-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  justify-content: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.application-guidelines .application-guidelines-step {
+  display: flex;
+  align-items: flex-start;
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-bottom: 32px;
+}
+
+.application-guidelines .application-guidelines-step:last-child {
+  margin-bottom: 0;
+}
+
+/* numeral */
+.application-guidelines .application-guidelines-numeral {
+  flex: 0 0 auto;
+  font-family: var(--heading-font-family);
+  font-weight: 700;
+  font-size: 112px; /* measured @390 */
+  line-height: 0.7; /* glyph overhangs the body box vertically, as measured */
+  color: var(--brand-accent);
+}
+
+/* body */
+.application-guidelines .application-guidelines-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline-end: 24px;
+}
+
+.application-guidelines .application-guidelines-label {
+  margin: 0 0 48px;
+  font-family: var(--heading-font-family);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--brand-accent);
+}
+
+.application-guidelines .application-guidelines-copy,
+.application-guidelines .application-guidelines-more {
+  font-family: var(--body-font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-color);
+}
+
+.application-guidelines .application-guidelines-copy p,
+.application-guidelines .application-guidelines-more p {
+  margin: 0; /* measured: bullet lines stack tight */
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.application-guidelines .application-guidelines-copy p:empty,
+.application-guidelines .application-guidelines-more p:empty {
+  display: none;
+}
+
+/* read more / read less — source shipped a hrefless anchor with cursor:auto; fixed to a real button */
+.application-guidelines .application-guidelines-toggle {
+  display: block;
+  margin-top: 12px;
+  border: 0;
+  padding: 0;
+  background: none;
+  font-family: var(--body-font-family);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: start;
+  color: var(--brand-accent);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.application-guidelines .application-guidelines-toggle:hover,
+.application-guidelines .application-guidelines-toggle:focus-visible {
+  color: var(--link-hover-color);
+}
+
+.application-guidelines .application-guidelines-toggle:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+}
+
+.application-guidelines .application-guidelines-toggle .application-guidelines-toggle-expanded,
+.application-guidelines .application-guidelines-toggle[aria-expanded="true"] .application-guidelines-toggle-collapsed {
+  display: none;
+}
+
+.application-guidelines .application-guidelines-toggle[aria-expanded="true"] .application-guidelines-toggle-expanded {
+  display: inline;
+}
+
+/* label-less fallback: caret affordance, accessible name borrowed from the step label */
+.application-guidelines .application-guidelines-toggle-icon::after {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: rotate(45deg);
+  transition: transform 0.3s;
+}
+
+.application-guidelines .application-guidelines-toggle-icon[aria-expanded="true"]::after {
+  transform: rotate(-135deg);
+}
+
+@media (width >= 900px) {
+  .application-guidelines {
+    padding: 5rem 0; /* measured .wrapper 80px block padding @1440 */
+  }
+
+  .application-guidelines .application-guidelines-steps {
+    flex-wrap: nowrap;
+  }
+
+  .application-guidelines .application-guidelines-step {
+    flex: 1 1 0;
+    margin-bottom: 0;
+  }
+
+  .application-guidelines .application-guidelines-numeral {
+    font-size: clamp(120px, 16.6vw, 240px); /* 240px measured at 1440 (15rem) */
+  }
+}
