@@ -1,0 +1,205 @@
+/*
+ * application-guidelines — numeral-anchored 4-up step list.
+ *
+ * Every value below is MEASURED from the migration source
+ * (www.bobcard.co.in/credit-card-types/eterna) at 1440 / 1366 / 1200 / 1024 / 768 / 700 / 390.
+ *
+ * Source layout model @1440:
+ *   .pointers row = display:flex, width 1204
+ *   step column   = 301px (numeral 94 + body 207, no gutter)
+ *   numeral       = 240px / line-height 168px (0.7) / rgb(240,90,48) / Montserrat 700
+ *   label h4      = 19px / 700 / margin 0 0 48px / rgb(240,90,48)
+ *   copy p        = 14px / line-height 21px (1.5) / margin 0
+ *   read-more     = 12px / rgb(240,90,48)
+ *
+ * The source scales its ROOT font-size by breakpoint (11.2px @1200-1366, 16px @1440), so its
+ * type steps discretely rather than fluidly. Measured numeral steps:
+ *   <=1024 -> 112px,  1200-1366 -> 168px,  >=1440 -> 240px
+ * and the label steps 14px -> 19px at 1440. Those steps are reproduced literally below; the
+ * previous `clamp(120px, 16.6vw, 240px)` over-scaled the mid range (199px @1200 vs 168 measured).
+ *
+ * Column collapse: source is 4-up at 768 and stacked at 700 -> breakpoint is 768, not 900.
+ *
+ * Colour tokens carry LOCAL FALLBACKS on purpose: the styles/styles.css deployed on this branch
+ * is still the stock EDS boilerplate, where `--brand-accent` is UNDEFINED and
+ * `color: var(--brand-accent)` computes to rgb(19,19,19). See the docket escalation.
+ */
+
+.application-guidelines {
+  padding: 56px 0; /* measured source wrapper 56px block padding @390 */
+}
+
+/* header */
+.application-guidelines .application-guidelines-header :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  font-family: var(--heading-font-family);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text-color, #494949);
+}
+
+.application-guidelines .application-guidelines-header p {
+  margin: 16px 0 48px;
+  max-width: 720px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.application-guidelines .application-guidelines-header p:last-child {
+  margin-bottom: 48px;
+}
+
+/* step row — stacked below 768, 4-up at and above it */
+.application-guidelines .application-guidelines-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0; /* measured: source columns are flush, no gutter */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.application-guidelines .application-guidelines-step {
+  display: flex;
+  align-items: flex-start; /* source .d-flex.align-items-top */
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-bottom: 32px;
+}
+
+.application-guidelines .application-guidelines-step:last-child {
+  margin-bottom: 0;
+}
+
+/* numeral */
+.application-guidelines .application-guidelines-numeral {
+  flex: 0 0 auto; /* shrink-to-fit, like the source: body starts at the glyph edge */
+  font-family: var(--heading-font-family);
+  font-weight: 700;
+  font-size: 112px; /* measured @390 and @768-1024 */
+  line-height: 0.7; /* measured 168/240 — the glyph overhangs its box vertically */
+  color: var(--brand-accent, #f05a30);
+}
+
+/* body */
+.application-guidelines .application-guidelines-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.application-guidelines .application-guidelines-label {
+  margin: 0 0 32px;
+  font-family: var(--heading-font-family);
+  font-size: 14px; /* measured @390 / @768 / @1024 / @1200 — 19px only at 1440 */
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--brand-accent, #f05a30);
+}
+
+.application-guidelines .application-guidelines-copy,
+.application-guidelines .application-guidelines-more {
+  font-family: var(--body-font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-color, #494949);
+}
+
+.application-guidelines .application-guidelines-copy p,
+.application-guidelines .application-guidelines-more p {
+  margin: 0; /* measured: source bullet lines stack tight */
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.application-guidelines .application-guidelines-copy p:empty,
+.application-guidelines .application-guidelines-more p:empty {
+  display: none;
+}
+
+/*
+ * read more / read less
+ * The source ships `<a class="read-more def-href">` with NO href and computed cursor:auto — a
+ * dead, unfocusable control. Rebuilt as a real <button aria-expanded>; a fix of a source defect,
+ * not a replication of it.
+ */
+.application-guidelines .application-guidelines-toggle {
+  display: block;
+  margin-top: 12px;
+  border: 0;
+  padding: 0;
+  background: none;
+  font-family: var(--body-font-family);
+  font-size: 12px; /* measured */
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: start;
+  color: var(--brand-accent, #f05a30);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.application-guidelines .application-guidelines-toggle:hover,
+.application-guidelines .application-guidelines-toggle:focus-visible {
+  color: var(--link-hover-color, #d44a22);
+}
+
+.application-guidelines .application-guidelines-toggle:focus-visible {
+  outline: 2px solid var(--brand-accent, #f05a30);
+  outline-offset: 2px;
+}
+
+/* label-less fallback: caret affordance, accessible name borrowed from the step label */
+.application-guidelines .application-guidelines-toggle-icon::after {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: rotate(45deg);
+  transition: transform 0.3s;
+}
+
+.application-guidelines .application-guidelines-toggle-icon[aria-expanded="true"]::after {
+  transform: rotate(-135deg);
+}
+
+/* measured: source is 4-up at 768 and stacked at 700 */
+@media (width >= 768px) {
+  .application-guidelines {
+    padding: 80px 0; /* measured source wrapper 80px block padding */
+  }
+
+  .application-guidelines .application-guidelines-steps {
+    flex-wrap: nowrap;
+  }
+
+  .application-guidelines .application-guidelines-step {
+    flex: 1 1 0; /* equal columns — measured pitch 301 of a 1204 row @1440 */
+    margin-bottom: 0;
+  }
+
+  .application-guidelines .application-guidelines-body {
+    /* source uses 0 and leans on the numeral's side bearing; 12px guards against copy touching
+       the next column's numeral while the heading font falls back to a wider face */
+    padding-inline-end: 12px;
+  }
+}
+
+@media (width >= 1200px) {
+  .application-guidelines .application-guidelines-numeral {
+    font-size: 168px; /* measured @1200 and @1366 */
+  }
+}
+
+@media (width >= 1440px) {
+  .application-guidelines .application-guidelines-numeral {
+    font-size: 240px; /* measured @1440 */
+  }
+
+  .application-guidelines .application-guidelines-label {
+    margin-bottom: 48px; /* measured @1440 */
+    font-size: 19px; /* measured @1440 */
+  }
+}
