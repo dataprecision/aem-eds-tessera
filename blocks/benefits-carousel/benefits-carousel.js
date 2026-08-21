@@ -1,81 +1,196 @@
 /*
  * benefits-carousel
+ * ADOPTED from the AEM Block Collection `carousel` block: slide paging, the arrow
+ * disabled/active bookkeeping and the aria-hidden + tabindex handling on off-screen
+ * slides all come from that reference implementation.
  *
- * Adopted from the AEM Block Collection `carousel` block: slide paging,
- * arrow disabled-state handling and the aria/tabindex bookkeeping come from
- * the reference implementation. Added on top: a fixed multi-visible window
- * (4 items on desktop, one-item step) and a trailing disclaimer row with an
- * inline read-more/read-less toggle.
+ * Adapted per packet:
+ *  - fixed multi-item window instead of one-slide-per-view (measured: 264px item +
+ *    20px gap = 284px step, 4 visible on desktop), track moved with translate3d
+ *  - non-infinite: prev is disabled at index 0, next at the last page
+ *  - no dots/pager, no autoplay (measured: track stays translate3d(0px, 0px, 0px) when idle)
+ *  - trailing disclaimer row with an inline read-more/read-less toggle
  *
- * Conflicts resolved (packet):
- * - computedStyle nav circle rgb(224,224,224) -> foundation token --surface-muted
- *   (block CSS must not mint palette values).
- * - computedStyle .disclaimer_descrip color rgb(227,227,227) is unreadable on the
- *   rgb(243,243,243) panel -> --text-color.
- * - domSlice ships a permanently display:none .disclaimer_popup modal; buildNotes
- *   say drop it, so no overlay is created here.
- * - domSlice arrows are hrefless/label-less <button data-role="none">; rebuilt as
- *   real buttons with disabled state + accessible names.
+ * FIXes applied (buildNotes):
+ *  - read-more rebuilt as a real <button aria-expanded> (source shipped an href-less <a>)
+ *  - the dead .disclaimer_popup overlay is NOT ported
+ *  - every target=_blank link gets rel="noopener noreferrer"
+ *  - MITIGATION (migrated content): the imported document ships `src="about:error"` for
+ *    every icon, which renders a broken-image glyph in flow (measured 105.28x28.80px
+ *    where a 60x60 icon belongs). Unresolvable / failed icons are pruned so the item
+ *    degrades to a text-only benefit instead of a broken image. This guard is inert
+ *    once the assets are re-imported with real URLs — the real cure is content-side.
+ * Replicate-as-is: benefit items stay non-interactive (no hover state, no click handler).
+ *
+ * Authored content model (rows, top to bottom):
+ *  1. heading   : one cell — panel heading text
+ *  2. item x N  : icon image | item title | item copy (copy may contain inline links)
+ *  3. disclaimer: truncated copy | full copy | [more label] | [less label]
+ * Item rows are the rows that carry an image; the first image-less row is the heading,
+ * a later image-less row is the disclaimer. Authors may omit heading or disclaimer.
  */
 
-/* Optional foundation placeholders; absent in this repo, so degrade silently. */
-async function loadLabels() {
-  const sources = ['../../scripts/placeholders.js', '../../scripts/aem.js'];
-  for (let i = 0; i < sources.length; i += 1) {
-    try {
-      /* eslint-disable no-await-in-loop */
-      const mod = await import(sources[i]);
-      if (typeof mod.fetchPlaceholders === 'function') {
-        return (await mod.fetchPlaceholders()) || {};
-      }
-      /* eslint-enable no-await-in-loop */
-    } catch (e) {
-      /* placeholders are optional */
-    }
+import { decorateIcons } from '../../scripts/aem.js';
+
+const FALLBACK_STEP = 284; // measured slide width 264px + 20px gap
+
+/** @shared-candidate loadPlaceholders — optional-dependency wrapper around fetchPlaceholders so a block keeps working on projects that have no placeholders.js. */
+async function loadPlaceholders() {
+  try {
+    const mod = await import('../../scripts/placeholders.js');
+    return (await mod.fetchPlaceholders()) || {};
+  } catch (e) {
+    return {};
   }
-  return {};
 }
 
-/* Fix (page-wide policy): every new-tab link gets a full rel. */
-function hardenExternalLinks(scope) {
-  scope.querySelectorAll('a[target="_blank"]').forEach((link) => {
-    link.setAttribute('rel', 'noopener noreferrer');
+/** @shared-candidate toggleExpandable — aria-expanded button driving a collapsed/expanded pair of regions with authored labels; any truncated-copy block needs the same mechanics. */
+function toggleExpandable(button, collapsed, expanded, labels) {
+  const isOpen = button.getAttribute('aria-expanded') === 'true';
+  button.setAttribute('aria-expanded', String(!isOpen));
+  button.textContent = isOpen ? labels.more : labels.less;
+  if (collapsed) collapsed.hidden = !isOpen;
+  if (expanded) expanded.hidden = isOpen;
+}
+
+/** @shared-candidate isUnresolvableSrc — migrated documents carry placeholder srcs (about:error, empty, javascript:) that can never paint; any block rendering authored media needs the same test. */
+function isUnresolvableSrc(src) {
+  if (!src) return true;
+  return /^\s*(about:|javascript:)/i.test(src);
+}
+
+/**
+ * @shared-candidate pruneBrokenMedia — drops images that cannot paint (placeholder scheme
+ * now, load failure later) so authored media degrades to a text-only layout instead of a
+ * broken-image glyph. Generic to any block that renders imported media.
+ */
+function pruneBrokenMedia(scope) {
+  scope.querySelectorAll('img').forEach((img) => {
+    const drop = () => {
+      const item = img.closest('.benefits-carousel-item');
+      const holder = img.closest('.benefits-carousel-item-icon');
+      const media = img.closest('picture') || img;
+      media.remove();
+      if (holder && !holder.querySelector('img, picture') && !holder.textContent.trim()) {
+        holder.remove();
+      }
+      if (item && !item.querySelector('img, picture')) {
+        item.classList.add('benefits-carousel-item-no-icon');
+      }
+    };
+    if (isUnresolvableSrc(img.getAttribute('src'))) {
+      drop();
+      return;
+    }
+    if (img.complete && img.naturalWidth === 0) {
+      drop();
+      return;
+    }
+    img.addEventListener('error', drop, { once: true });
   });
 }
 
-function isItemRow(row) {
-  return !!row.querySelector('picture, img');
+/** External links open in a new tab and always carry rel="noopener noreferrer" (buildNotes fix). */
+function decorateExternalLinks(scope) {
+  scope.querySelectorAll('a[href]').forEach((link) => {
+    let external = false;
+    try {
+      external = new URL(link.href, window.location.href).host !== window.location.host;
+    } catch (e) {
+      external = false;
+    }
+    if (external || link.target === '_blank') {
+      link.target = '_blank';
+      link.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
 }
 
-function buildItem(row) {
+/** Measured geometry of the current layout: one step = item width + gap. */
+function getMetrics(block) {
+  const items = [...block.querySelectorAll('.benefits-carousel-item')];
+  const viewport = block.querySelector('.benefits-carousel-viewport');
+  if (!items.length || !viewport) return { step: FALLBACK_STEP, visible: 1, total: 0 };
+  const measured = items.length > 1
+    ? items[1].offsetLeft - items[0].offsetLeft
+    : items[0].offsetWidth;
+  const step = measured > 0 ? measured : FALLBACK_STEP;
+  const visible = Math.min(items.length, Math.max(1, Math.round(viewport.clientWidth / step)));
+  return { step, visible, total: items.length };
+}
+
+function updateVisibility(block, index, visible) {
+  const items = block.querySelectorAll('.benefits-carousel-item');
+  items.forEach((item, idx) => {
+    const inWindow = idx >= index && idx < index + visible;
+    item.setAttribute('aria-hidden', String(!inWindow));
+    item.querySelectorAll('a').forEach((link) => {
+      if (inWindow) link.removeAttribute('tabindex');
+      else link.setAttribute('tabindex', '-1');
+    });
+  });
+}
+
+function showPage(block, requested) {
+  const track = block.querySelector('.benefits-carousel-track');
+  if (!track) return;
+  const { step, visible, total } = getMetrics(block);
+  const maxIndex = Math.max(0, total - visible);
+  const index = Math.min(Math.max(requested, 0), maxIndex);
+  block.dataset.activeSlide = index;
+  // -0 stringifies to "0", so the resting state is exactly translate3d(0px, 0px, 0px).
+  track.style.transform = `translate3d(${-(index * step)}px, 0px, 0px)`;
+  updateVisibility(block, index, visible);
+
+  const nav = block.querySelector('.benefits-carousel-nav');
+  const prev = block.querySelector('.benefits-carousel-prev');
+  const next = block.querySelector('.benefits-carousel-next');
+  if (nav) nav.hidden = maxIndex === 0;
+  if (prev) prev.disabled = index === 0;
+  if (next) next.disabled = index >= maxIndex;
+}
+
+function buildHeading(row) {
+  const heading = document.createElement('div');
+  heading.className = 'benefits-carousel-heading';
+  const authored = row.querySelector('h1, h2, h3, h4, h5, h6');
+  if (authored) {
+    heading.append(authored);
+  } else {
+    const h2 = document.createElement('h2');
+    h2.textContent = row.textContent.trim();
+    heading.append(h2);
+  }
+  return heading;
+}
+
+function buildItem(row, index) {
   const item = document.createElement('li');
   item.className = 'benefits-carousel-item';
+  item.dataset.slideIndex = index;
 
-  const cells = [...row.children];
-  const iconCell = cells.find((cell) => cell.querySelector('picture, img'));
-  const rest = cells.filter((cell) => cell !== iconCell);
-
-  if (iconCell) {
-    iconCell.className = 'benefits-carousel-item-icon';
-    item.append(iconCell);
-  }
-
-  let headingCell = null;
-  let copyCells = rest;
-  if (rest.length > 1) {
-    [headingCell] = rest;
-    copyCells = rest.slice(1);
-  }
-
-  if (headingCell) {
-    const authored = headingCell.querySelector('h1, h2, h3, h4, h5, h6');
-    const heading = authored || document.createElement('h3');
-    if (!authored) heading.textContent = headingCell.textContent.trim();
-    heading.classList.add('benefits-carousel-item-title');
-    item.append(heading);
-  }
-
-  copyCells.forEach((cell) => {
+  let titleDone = false;
+  [...row.children].forEach((cell) => {
+    if (cell.querySelector('picture, img')) {
+      cell.className = 'benefits-carousel-item-icon';
+      item.append(cell);
+      return;
+    }
+    if (!titleDone) {
+      titleDone = true;
+      const title = document.createElement('div');
+      title.className = 'benefits-carousel-item-title';
+      const authored = cell.querySelector('h1, h2, h3, h4, h5, h6');
+      if (authored) {
+        title.append(authored);
+      } else {
+        const h3 = document.createElement('h3');
+        h3.textContent = cell.textContent.trim();
+        title.append(h3);
+      }
+      item.append(title);
+      return;
+    }
     cell.className = 'benefits-carousel-item-copy';
     item.append(cell);
   });
@@ -83,205 +198,104 @@ function buildItem(row) {
   return item;
 }
 
-/**
- * @shared-candidate paged carousel engine — steps a flex track one item at a
- * time inside a fixed multi-visible window, clamps to a non-infinite range and
- * drives arrow disabled state; any "N visible, step by 1" block needs this.
- */
-function createPager(block, viewport, track, prev, next) {
-  const slides = [...track.children];
-
-  const step = () => {
-    if (slides.length > 1) {
-      const delta = slides[1].offsetLeft - slides[0].offsetLeft;
-      if (delta > 0) return delta;
-    }
-    return slides[0] ? slides[0].offsetWidth || viewport.clientWidth : viewport.clientWidth;
-  };
-  const perView = () => Math.max(1, Math.round(viewport.clientWidth / step()));
-  const maxIndex = () => Math.max(0, slides.length - perView());
-  const current = () => parseInt(block.dataset.activeSlide, 10) || 0;
-
-  function render(index) {
-    const first = Math.min(Math.max(index, 0), maxIndex());
-    const last = first + perView() - 1;
-    block.dataset.activeSlide = first;
-
-    const offset = slides[first] ? slides[first].offsetLeft - slides[0].offsetLeft : 0;
-    track.style.transform = `translate3d(-${offset}px, 0px, 0px)`;
-
-    slides.forEach((slide, idx) => {
-      const visible = idx >= first && idx <= last;
-      slide.classList.toggle('benefits-carousel-item-active', visible);
-      slide.setAttribute('aria-hidden', String(!visible));
-      slide.querySelectorAll('a').forEach((link) => {
-        if (visible) link.removeAttribute('tabindex');
-        else link.setAttribute('tabindex', '-1');
-      });
-    });
-
-    if (prev) prev.disabled = first <= 0;
-    if (next) next.disabled = first >= maxIndex();
-  }
-
-  if (prev) prev.addEventListener('click', () => render(current() - 1));
-  if (next) next.addEventListener('click', () => render(current() + 1));
-
-  /* touch/pen paging only; no autoplay (measured: track never moves on its own) */
-  let startX = null;
-  viewport.addEventListener('pointerdown', (e) => {
-    startX = e.pointerType === 'mouse' ? null : e.clientX;
-  });
-  viewport.addEventListener('pointerup', (e) => {
-    if (startX === null) return;
-    const dx = e.clientX - startX;
-    startX = null;
-    if (Math.abs(dx) > 40) render(current() + (dx < 0 ? 1 : -1));
-  });
-
-  if (window.ResizeObserver) {
-    let width = 0;
-    const observer = new ResizeObserver(() => {
-      if (viewport.clientWidth === width) return;
-      width = viewport.clientWidth;
-      render(current());
-    });
-    observer.observe(viewport);
-  }
-
-  render(0);
+function buildNav(placeholders) {
+  const nav = document.createElement('div');
+  nav.className = 'benefits-carousel-nav';
+  // Arrow glyphs are drawn in CSS — no inline SVG, nothing an author would need to swap.
+  nav.innerHTML = `
+    <button type="button" class="benefits-carousel-prev" aria-label="${placeholders.previousSlide || 'Previous'}"></button>
+    <button type="button" class="benefits-carousel-next" aria-label="${placeholders.nextSlide || 'Next'}"></button>`;
+  return nav;
 }
 
-/**
- * @shared-candidate inline expandable — swaps a truncated node for its full
- * copy behind a real <button aria-expanded>; reusable for any read-more row.
- */
-function toggleExpandable(button, short, full, moreLabel, lessLabel) {
-  const expanded = button.getAttribute('aria-expanded') === 'true';
-  button.setAttribute('aria-expanded', String(!expanded));
-  button.textContent = expanded ? moreLabel : lessLabel;
-  short.hidden = !expanded;
-  full.hidden = expanded;
-}
-
-function buildDisclaimer(row, labels, id) {
+function buildDisclaimer(row, placeholders, id) {
   const cells = [...row.children];
-  if (!cells.length) return null;
+  const short = cells[0];
+  const full = cells[1];
+  const disclaimer = document.createElement('div');
+  disclaimer.className = 'benefits-carousel-disclaimer';
 
-  const wrapper = document.createElement('div');
-  wrapper.className = 'benefits-carousel-disclaimer';
-
-  const [short, full, moreCell, lessCell] = cells;
-  const text = document.createElement('div');
-  text.className = 'benefits-carousel-disclaimer-text';
-  text.id = `benefits-carousel-${id}-disclaimer`;
-
-  short.className = 'benefits-carousel-disclaimer-short';
-  text.append(short);
-  wrapper.append(text);
-
-  const hasFull = full && full.textContent.trim();
-  if (!hasFull) return wrapper;
-
-  full.className = 'benefits-carousel-disclaimer-full';
-  full.hidden = true;
-  text.append(full);
-
-  const moreLabel = (moreCell && moreCell.textContent.trim()) || labels.readMore || 'Read more';
-  const lessLabel = (lessCell && lessCell.textContent.trim()) || labels.readLess || 'Read less';
-  if (moreCell) moreCell.remove();
-  if (lessCell) lessCell.remove();
-
-  const actions = document.createElement('p');
-  actions.className = 'benefits-carousel-disclaimer-actions';
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'benefits-carousel-toggle';
-  button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-controls', text.id);
-  button.textContent = moreLabel;
-  button.addEventListener('click', () => {
-    toggleExpandable(button, short, full, moreLabel, lessLabel);
-  });
-  actions.append(button);
-  wrapper.append(actions);
-
-  return wrapper;
+  if (short) {
+    short.className = 'benefits-carousel-disclaimer-short';
+    disclaimer.append(short);
+  }
+  if (full) {
+    full.className = 'benefits-carousel-disclaimer-full';
+    full.id = `${id}-disclaimer`;
+    full.hidden = true;
+    disclaimer.append(full);
+  }
+  if (short && full) {
+    const labels = {
+      more: (cells[2] && cells[2].textContent.trim()) || placeholders.readMore || 'Read more',
+      less: (cells[3] && cells[3].textContent.trim()) || placeholders.readLess || 'Read less',
+    };
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'benefits-carousel-read-more';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', full.id);
+    toggle.textContent = labels.more;
+    toggle.addEventListener('click', () => toggleExpandable(toggle, short, full, labels));
+    disclaimer.append(toggle);
+  }
+  [...cells.slice(2)].forEach((cell) => cell.remove());
+  return disclaimer;
 }
 
-let blockId = 0;
+let carouselId = 0;
 
 export default async function decorate(block) {
-  blockId += 1;
-  const labels = await loadLabels();
-  const rows = [...block.children];
-  const itemRows = rows.filter(isItemRow);
-  if (!itemRows.length) return;
+  carouselId += 1;
+  const id = `benefits-carousel-${carouselId}`;
+  if (!block.id) block.id = id;
 
-  const firstItem = rows.indexOf(itemRows[0]);
-  const lastItem = rows.indexOf(itemRows[itemRows.length - 1]);
-  const headRows = rows.slice(0, firstItem);
-  const tailRows = rows.slice(lastItem + 1);
+  const placeholders = await loadPlaceholders();
 
-  const panel = document.createElement('div');
-  panel.className = 'benefits-carousel-panel';
-
-  /* leading row(s): panel heading — authors may omit the heading element */
-  headRows.forEach((row) => {
-    const authored = row.querySelector('h1, h2, h3, h4, h5, h6');
-    const heading = authored || document.createElement('h2');
-    if (!authored) heading.textContent = row.textContent.trim();
-    heading.classList.add('benefits-carousel-heading');
-    panel.append(heading);
-    row.remove();
+  const itemRows = [];
+  let headingRow = null;
+  let disclaimerRow = null;
+  [...block.children].forEach((row) => {
+    if (row.querySelector('picture, img')) itemRows.push(row);
+    else if (!itemRows.length && !headingRow) headingRow = row;
+    else disclaimerRow = row;
   });
 
   const stage = document.createElement('div');
   stage.className = 'benefits-carousel-stage';
-
   const viewport = document.createElement('div');
   viewport.className = 'benefits-carousel-viewport';
-
   const track = document.createElement('ul');
   track.className = 'benefits-carousel-track';
-  itemRows.forEach((row) => {
-    track.append(buildItem(row));
-    row.remove();
-  });
+  itemRows.forEach((row, idx) => track.append(buildItem(row, idx)));
   viewport.append(track);
-  stage.append(viewport);
+  stage.append(viewport, buildNav(placeholders));
 
-  const singlePage = track.children.length < 2;
-  let prev = null;
-  let next = null;
-  if (!singlePage) {
-    const nav = document.createElement('div');
-    nav.className = 'benefits-carousel-nav';
-    prev = document.createElement('button');
-    prev.type = 'button';
-    prev.className = 'benefits-carousel-prev';
-    prev.setAttribute('aria-label', labels.previousSlide || 'Previous Slide');
-    next = document.createElement('button');
-    next.type = 'button';
-    next.className = 'benefits-carousel-next';
-    next.setAttribute('aria-label', labels.nextSlide || 'Next Slide');
-    nav.append(prev, next);
-    stage.append(nav);
-  }
+  const parts = [];
+  if (headingRow) parts.push(buildHeading(headingRow));
+  parts.push(stage);
+  if (disclaimerRow) parts.push(buildDisclaimer(disclaimerRow, placeholders, block.id));
+  block.replaceChildren(...parts);
 
-  panel.append(stage);
+  // rows are classified by the presence of media, so pruning happens only after the
+  // item / heading / disclaimer split is settled
+  pruneBrokenMedia(block);
+  decorateExternalLinks(block);
+  decorateIcons(block);
 
-  /* trailing row(s): disclaimer, never a 10th slide */
-  tailRows.forEach((row) => {
-    const disclaimer = buildDisclaimer(row, labels, blockId);
-    if (disclaimer) panel.append(disclaimer);
-    row.remove();
+  block.querySelector('.benefits-carousel-prev').addEventListener('click', () => {
+    showPage(block, parseInt(block.dataset.activeSlide, 10) - 1);
+  });
+  block.querySelector('.benefits-carousel-next').addEventListener('click', () => {
+    showPage(block, parseInt(block.dataset.activeSlide, 10) + 1);
   });
 
-  block.setAttribute('role', 'region');
-  block.setAttribute('aria-roledescription', labels.carousel || 'Carousel');
-  block.append(panel);
-  hardenExternalLinks(block);
+  showPage(block, 0);
 
-  if (!singlePage) createPager(block, viewport, track, prev, next);
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(() => {
+      showPage(block, parseInt(block.dataset.activeSlide, 10) || 0);
+    });
+    observer.observe(block);
+  }
 }

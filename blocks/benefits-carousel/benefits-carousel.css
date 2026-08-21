@@ -1,81 +1,99 @@
-.benefits-carousel {
-  --bc-visible: 1;
-  --bc-gap: 20px;
-  --bc-pad-x: 20px;
-  --bc-pad-y: 32px;
-  --bc-radius: 24px;
-  --bc-nav-size: 44px;
-  --bc-nav-inset: 2px;
-}
+/*
+ * benefits-carousel — panel + fixed-window carousel.
+ * Palette, fonts and shared radii come from styles.css tokens; only block-specific
+ * geometry lives here. Measured values (computedStyle) win over the visualSpec
+ * estimates: panel radius 90px (not ~85px), heading 30px (not ~32px), panel #f3f3f3
+ * (= --light-color, not ~#f4f4f4).
+ */
 
-.benefits-carousel .benefits-carousel-panel {
-  position: relative;
+.benefits-carousel {
+  --benefits-visible: 1;
+  --benefits-gap: 20px;
+  --benefits-item-width: calc((100% - (var(--benefits-visible) - 1) * var(--benefits-gap)) / var(--benefits-visible));
+  --benefits-icon-size: 60px;
+  --benefits-arrow-size: 48px;
+
   box-sizing: border-box;
-  max-width: var(--content-width-narrow);
-  margin: 0 auto;
-  padding: var(--bc-pad-y) var(--bc-pad-x);
-  border-radius: var(--bc-radius);
+  padding: 32px 24px;
+  border-radius: 40px;
   background-color: var(--light-color);
 }
 
-.benefits-carousel .benefits-carousel-heading {
+/* heading */
+.benefits-carousel .benefits-carousel-heading :is(h1, h2, h3, h4, h5, h6) {
   margin: 0 0 24px;
-  font-size: var(--heading-font-size-l);
+  color: var(--text-color);
+  font-family: var(--heading-font-family);
+  font-size: 24px;
   font-weight: 400;
   line-height: 1.2;
-  color: var(--text-color);
 }
 
+/* stage: viewport + arrows */
 .benefits-carousel .benefits-carousel-stage {
   position: relative;
 }
 
 .benefits-carousel .benefits-carousel-viewport {
+  width: 100%;
   overflow: hidden;
 }
 
 .benefits-carousel .benefits-carousel-track {
   display: flex;
-  gap: var(--bc-gap);
+  gap: var(--benefits-gap);
   margin: 0;
   padding: 0;
   list-style: none;
-  transform: translate3d(0, 0, 0);
+  transform: translate3d(0px, 0px, 0px);
   transition: transform 0.4s ease;
   will-change: transform;
 }
 
 .benefits-carousel .benefits-carousel-item {
-  box-sizing: border-box;
-  flex: 0 0 calc((100% - (var(--bc-visible) - 1) * var(--bc-gap)) / var(--bc-visible));
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  /* replicate-as-is: items are plain content — no hover, no pointer, no click target */
+  flex: 0 0 var(--benefits-item-width);
+  width: var(--benefits-item-width);
+  margin: 0;
+  /* replicate-as-is: items are plain content — no hover state, no pointer cursor */
 }
 
 .benefits-carousel .benefits-carousel-item-icon img {
-  width: 60px;
-  height: 60px;
+  width: var(--benefits-icon-size);
+  height: var(--benefits-icon-size);
   object-fit: contain;
 }
 
-.benefits-carousel .benefits-carousel-item-title {
-  margin: 32px 0 20px;
-  font-size: var(--heading-font-size-m);
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--text-color);
+.benefits-carousel .benefits-carousel-item-icon picture {
+  display: block;
+  line-height: 0;
 }
 
-.benefits-carousel .benefits-carousel-item-copy {
-  font-size: var(--body-font-size-xs);
-  line-height: 1.5;
+.benefits-carousel .benefits-carousel-item-title {
+  margin: 24px 0 16px;
+}
+
+/* icon pruned (unresolvable/failed media): the title takes the top of the item so the
+   card does not open with an empty icon slot */
+.benefits-carousel .benefits-carousel-item-no-icon .benefits-carousel-item-title {
+  margin-top: 0;
+}
+
+.benefits-carousel .benefits-carousel-item-title :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
   color: var(--text-color);
+  font-family: var(--heading-font-family);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .benefits-carousel .benefits-carousel-item-copy p {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  color: var(--text-color);
+  font-size: 14px;
+  /* measured font-weight 100; the shipped Work Sans faces start at 400, so 400 is the real render */
+  font-weight: 400;
+  line-height: 21px;
 }
 
 .benefits-carousel .benefits-carousel-item-copy p:last-child {
@@ -87,141 +105,151 @@
   text-decoration: none;
 }
 
-.benefits-carousel .benefits-carousel-item-copy a:hover,
-.benefits-carousel .benefits-carousel-item-copy a:focus-visible {
-  text-decoration: underline;
+/* arrows — glyph drawn in CSS, no inline SVG */
+.benefits-carousel .benefits-carousel-nav {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
 }
 
-/* nav circles: measured at -79.5px, which lands inside the panel's 76.8px
-   gutter — anchored to the gutter so they never overflow the section */
 .benefits-carousel .benefits-carousel-nav button {
-  position: absolute;
-  top: 50%;
-  width: var(--bc-nav-size);
-  height: var(--bc-nav-size);
+  position: relative;
+  width: var(--benefits-arrow-size);
+  height: var(--benefits-arrow-size);
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 100%;
+  /* measured #e0e0e0; using the nearest foundation token rather than minting a palette value */
   background-color: var(--surface-muted);
-  transform: translateY(-50%);
+  font-size: 0;
+  color: transparent;
   cursor: pointer;
-  transition: opacity 0.2s, background-color 0.2s;
-  z-index: 1;
 }
 
-.benefits-carousel .benefits-carousel-prev {
-  left: var(--bc-nav-inset);
-}
-
-.benefits-carousel .benefits-carousel-next {
-  right: var(--bc-nav-inset);
-}
-
-.benefits-carousel .benefits-carousel-nav button:hover,
-.benefits-carousel .benefits-carousel-nav button:focus-visible {
-  background-color: var(--light-color);
-}
-
-.benefits-carousel .benefits-carousel-nav button[disabled] {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* chevron drawn in CSS (no inline SVG in block JS) */
 .benefits-carousel .benefits-carousel-nav button::after {
   content: '';
-  display: block;
   position: absolute;
   top: 50%;
-  left: calc(50% + 2px);
+  left: 50%;
   width: 12px;
   height: 12px;
-  border: 2px solid var(--dark-color);
+  border: 2px solid var(--text-color);
   border-bottom: 0;
   border-left: 0;
-  transform: translate(-50%, -50%) rotate(-135deg);
+  transform: translate(-30%, -50%) rotate(-135deg);
 }
 
-.benefits-carousel .benefits-carousel-next::after {
-  left: calc(50% - 2px);
-  transform: translate(-50%, -50%) rotate(45deg);
+.benefits-carousel .benefits-carousel-nav button.benefits-carousel-next::after {
+  transform: translate(-70%, -50%) rotate(45deg);
 }
 
+.benefits-carousel .benefits-carousel-nav button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* disclaimer */
 .benefits-carousel .benefits-carousel-disclaimer {
   max-width: 909px;
   margin: 32px auto 0;
-  /* measured #e3e3e3 on a #f3f3f3 panel is unreadable — brand text colour used */
+  /* measured wrapper reports 16px/#e3e3e3; rendered legal copy is 12px and #e3e3e3
+     fails contrast on #f3f3f3, so the text uses --text-color */
   color: var(--text-color);
-  font-size: var(--body-font-size-s);
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .benefits-carousel .benefits-carousel-disclaimer p {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .benefits-carousel .benefits-carousel-disclaimer a:any-link {
   color: var(--link-color);
-  overflow-wrap: anywhere;
+  text-decoration: none;
 }
 
-.benefits-carousel .benefits-carousel-disclaimer-actions {
-  margin: 0;
-}
-
-.benefits-carousel .benefits-carousel-toggle {
+.benefits-carousel .benefits-carousel-read-more {
   margin: 0;
   padding: 0;
   border: 0;
   background: none;
   color: var(--link-color);
+  font-family: inherit;
   font-size: 12px;
-  line-height: 1.5;
-  text-decoration: none;
+  line-height: 18px;
   cursor: pointer;
 }
 
-.benefits-carousel .benefits-carousel-toggle:hover,
-.benefits-carousel .benefits-carousel-toggle:focus-visible {
+.benefits-carousel .benefits-carousel-read-more:hover,
+.benefits-carousel .benefits-carousel-read-more:focus-visible {
   color: var(--link-hover-color);
   text-decoration: underline;
 }
 
 @media (width >= 600px) {
   .benefits-carousel {
-    --bc-visible: 2;
-    --bc-pad-x: 40px;
-    --bc-pad-y: 40px;
-    --bc-radius: 48px;
+    --benefits-visible: 2;
   }
 }
 
 @media (width >= 900px) {
   .benefits-carousel {
-    --bc-visible: 3;
-    --bc-pad-x: 76.8px;
-    --bc-pad-y: 48px;
-    --bc-radius: 90px;
-    --bc-nav-size: 65px;
-    --bc-nav-inset: 6px;
+    --benefits-visible: 3;
+    --benefits-arrow-size: 65px;
+
+    padding: 48px 76.8px;
+    border-radius: 90px;
   }
 
-  .benefits-carousel .benefits-carousel-heading {
+  .benefits-carousel .benefits-carousel-heading :is(h1, h2, h3, h4, h5, h6) {
     margin-bottom: 48px;
+    font-size: 30px;
+    line-height: 36px;
   }
 
   .benefits-carousel .benefits-carousel-item-title {
     margin: 64px 0 48px;
   }
 
+  .benefits-carousel .benefits-carousel-item-no-icon .benefits-carousel-item-title {
+    margin-top: 0;
+  }
+
   .benefits-carousel .benefits-carousel-disclaimer {
     margin-top: 64px;
+  }
+
+  /* circular controls sit at the panel edge, vertically centred on the item area */
+  .benefits-carousel .benefits-carousel-nav {
+    position: absolute;
+    inset: 0 -79.5px;
+    margin: 0;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .benefits-carousel .benefits-carousel-nav button {
+    pointer-events: auto;
   }
 }
 
 @media (width >= 1200px) {
   .benefits-carousel {
-    --bc-visible: 4;
+    --benefits-visible: 4;
+    --benefits-item-width: 264px; /* measured: 264px item, 284px step */
+  }
+
+  .benefits-carousel .benefits-carousel-viewport {
+    max-width: calc(var(--benefits-visible) * (var(--benefits-item-width) + var(--benefits-gap)) - var(--benefits-gap));
+    margin-inline: auto;
+  }
+
+  .benefits-carousel .benefits-carousel-item {
+    min-height: 337px;
   }
 }
