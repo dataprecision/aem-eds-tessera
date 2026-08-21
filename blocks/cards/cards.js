@@ -1,66 +1,37 @@
-import { createOptimizedPicture, fetchPlaceholders } from '../../scripts/aem.js';
+import { createOptimizedPicture } from '../../scripts/aem.js';
+import { createReadMoreFromMarker, resolveLabels } from '../../scripts/utils.js';
 
 /*
  * Read-more marker contract (authored content, no hardcoded UI strings):
  *   …visible copy…
  *   <p><a href="#read-more">Read more</a> <a href="#read-less">Read less</a></p>
  *   …collapsible copy…
- * The marker paragraph is replaced by a real <button aria-expanded>, and every
- * node after it is moved into a hidden container. An <hr> works as an alternate
- * split marker; labels then come from placeholders.json (readMore / readLess).
- * Without an authored or placeholder label the copy simply stays fully visible.
+ * The marker paragraph is replaced by a real <button aria-expanded>, and every node
+ * after it is moved into a hidden region — implemented once in scripts/utils.js as
+ * createReadMoreFromMarker(). An <hr> works as an alternate split marker; labels then
+ * come from placeholders.json (readMore / readLess). Without an authored or placeholder
+ * label the copy simply stays fully visible.
+ *
+ * NOTE: labels resolve through utils' resolveLabels() rather than importing
+ * fetchPlaceholders from scripts/aem.js — the vendored aem.js on this project exports
+ * no fetchPlaceholders, and a named import of a missing export is a link-time
+ * SyntaxError that kills the whole module (measured: block never decorated).
  */
-const MORE_HREF = 'a[href$="#read-more"]';
-const LESS_HREF = 'a[href$="#read-less"]';
+const MORE_SELECTOR = 'a[href$="#read-more"]';
 
-let expanderId = 0;
-
-function findMarker(body) {
-  const link = body.querySelector(MORE_HREF);
-  if (link) return link.closest('p') || link;
-  return body.querySelector('hr');
+function isImageCell(cell) {
+  return !!cell.querySelector('picture, img') && cell.textContent.trim() === '';
 }
 
-/**
- * @shared-candidate toggleExpandable() — content-marked in-place read more/less
- * expander (button + aria-expanded + hidden remainder); the same pattern recurs
- * in any block whose authored copy is truncated behind an author-written label.
- */
-function toggleExpandable(body, placeholders) {
-  const marker = findMarker(body);
-  if (!marker) return;
+function hasReadMoreMarker(body) {
+  return !!(body.querySelector(MORE_SELECTOR) || body.querySelector('hr'));
+}
 
-  const moreText = marker.querySelector?.(MORE_HREF)?.textContent.trim();
-  const lessText = marker.querySelector?.(LESS_HREF)?.textContent.trim();
-  const labelMore = moreText || placeholders.readMore;
-  const labelLess = lessText || placeholders.readLess || labelMore;
-  if (!labelMore) return;
-
-  const more = document.createElement('div');
-  more.className = 'cards-card-more';
-  more.id = `cards-more-${(expanderId += 1)}`;
-  more.hidden = true;
-  let node = marker.nextSibling;
-  while (node) {
-    const next = node.nextSibling;
-    more.append(node);
-    node = next;
-  }
-
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'cards-read-more';
-  button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-controls', more.id);
-  button.textContent = labelMore;
-  button.addEventListener('click', () => {
-    const open = button.getAttribute('aria-expanded') === 'true';
-    button.setAttribute('aria-expanded', String(!open));
-    more.hidden = open;
-    button.textContent = open ? labelMore : labelLess;
-  });
-
-  marker.replaceWith(more, button);
+/* Only http(s) / site-relative sources can be run through the optimizer; anything else
+   (an unmigrated asset placeholder, a data: URI) is left exactly as authored so the
+   content defect stays visible instead of being reshaped into a different bad URL. */
+function isOptimizable(src) {
+  return /^https?:\/\//.test(src) || src.startsWith('//') || src.startsWith('/');
 }
 
 export default async function decorate(block) {
@@ -70,21 +41,32 @@ export default async function decorate(block) {
     const li = document.createElement('li');
     while (row.firstElementChild) li.append(row.firstElementChild);
     [...li.children].forEach((div) => {
-      if (div.children.length === 1 && div.querySelector('picture')) div.className = 'cards-card-image';
-      else div.className = 'cards-card-body';
+      /* authors ship both <picture><img> and a bare <img> inside a <p>;
+         both are image cells, everything else is body copy */
+      div.className = isImageCell(div) ? 'cards-card-image' : 'cards-card-body';
     });
     ul.append(li);
   });
-  ul.querySelectorAll('picture > img').forEach((img) => img.closest('picture').replaceWith(createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }])));
+  ul.querySelectorAll('img').forEach((img) => {
+    if (!isOptimizable(img.getAttribute('src') || '')) return;
+    const target = img.closest('picture') || img;
+    target.replaceWith(createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }]));
+  });
   block.replaceChildren(ul);
 
   // inconsistent link targets are preserved as authored (measured evidence);
   // only the security rel is hardened on the ones that do open a new tab.
   block.querySelectorAll('a[target="_blank"]').forEach((a) => a.setAttribute('rel', 'noopener noreferrer'));
 
-  const expandable = [...block.querySelectorAll('.cards-card-body')].filter((b) => findMarker(b));
+  const expandable = [...block.querySelectorAll('.cards-card-body')].filter(hasReadMoreMarker);
   if (expandable.length) {
-    const placeholders = await fetchPlaceholders();
-    expandable.forEach((body) => toggleExpandable(body, placeholders));
+    const labels = await resolveLabels({ more: 'readMore', less: 'readLess' });
+    expandable.forEach((body) => createReadMoreFromMarker(body, {
+      labelCollapsed: labels.more,
+      labelExpanded: labels.less,
+      regionClass: 'cards-card-more',
+      buttonClass: 'cards-read-more',
+      idPrefix: 'cards-more',
+    }));
   }
 }
