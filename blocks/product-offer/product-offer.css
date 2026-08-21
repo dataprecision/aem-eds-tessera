@@ -1,0 +1,219 @@
+/* product-offer — unequal three-column product row with divider, pill CTAs and animated offer line. */
+
+.product-offer {
+  /* measured divider rgb(133,133,133) and offer-glow rgb(255,235,59) have no foundation token */
+  --product-offer-divider-color: #858585;
+  --product-offer-offer-glow: rgb(255 235 59 / 50%);
+  --product-offer-offer-shadow: rgb(0 0 0 / 30%);
+
+  background-color: var(--background-color);
+  padding: 48px 0;
+}
+
+.product-offer .product-offer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0 -12px;
+}
+
+.product-offer .product-offer-col {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 0 12px;
+}
+
+/* below md the offer panel is half width with a top margin (measured col-6 mt-3 behaviour) */
+.product-offer .product-offer-offer-col {
+  width: 50%;
+  margin-top: 16px;
+}
+
+/* image: never linked, no hover zoom — replicates measured cursor:auto / transform:none */
+.product-offer .product-offer-img-col picture {
+  display: block;
+}
+
+.product-offer .product-offer-img-col img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 220px;
+  object-fit: contain;
+}
+
+/* typography */
+.product-offer .product-offer-content-col :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0 0 16px;
+  color: var(--text-color);
+  font-size: var(--heading-font-size-m);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.product-offer .product-offer-offer-col :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0 0 8px;
+  color: var(--dark-color);
+  font-size: var(--heading-font-size-s);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+/* measured body font-weight 100 resolves to the lightest available Work Sans face */
+.product-offer .product-offer-col p {
+  margin: 0 0 8px;
+  color: var(--text-color);
+  font-size: var(--body-font-size-xs);
+  line-height: 1.5;
+}
+
+.product-offer .product-offer-col p:last-child {
+  margin-bottom: 0;
+}
+
+/* animated, non-interactive offer line */
+.product-offer .product-offer-offer-line {
+  margin: 0;
+  padding-top: 10px;
+  color: var(--brand-accent);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+  text-shadow: var(--product-offer-offer-shadow) 2px 2px 4px;
+  cursor: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .product-offer:not(.static-offer) .product-offer-offer-line {
+    animation: product-offer-blink 1s infinite;
+  }
+}
+
+@keyframes product-offer-blink {
+  0%,
+  100% {
+    color: var(--dark-color);
+    text-shadow: var(--product-offer-offer-shadow) 2px 2px 4px;
+  }
+
+  50% {
+    color: var(--brand-accent);
+    text-shadow: var(--product-offer-offer-glow) 2px 2px 8px;
+  }
+}
+
+/* CTAs — filled orange pill, CSS-drawn arrow that slides right on hover */
+.product-offer .product-offer-cta-wrapper {
+  margin: 0;
+}
+
+.product-offer a.product-offer-cta:any-link {
+  position: relative;
+  display: inline-block;
+  margin-top: 24px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 12px 40px 12px 20px;
+  background-color: var(--brand-accent);
+  color: var(--background-color);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.product-offer a.product-offer-cta:any-link:hover,
+.product-offer a.product-offer-cta:any-link:focus-visible {
+  /* measured: background and colour do NOT change on hover; only the arrow moves */
+  background-color: var(--brand-accent);
+  color: var(--background-color);
+  text-decoration: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.product-offer a.product-offer-cta:any-link:focus-visible {
+  outline: 2px solid var(--dark-color);
+  outline-offset: 2px;
+}
+
+.product-offer a.product-offer-cta::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 14%;
+  width: 18px;
+  height: 8px;
+  transform: translateY(-50%);
+  background-color: currentcolor;
+  clip-path: polygon(0 37.5%, 61% 37.5%, 61% 0, 100% 50%, 61% 100%, 61% 62.5%, 0 62.5%);
+  transition: right 0.3s;
+}
+
+.product-offer a.product-offer-cta:hover::after,
+.product-offer a.product-offer-cta:focus-visible::after {
+  right: 8%;
+}
+
+@media (width >= 900px) {
+  /* unequal widths: ~33.3% / 41.7% / 25% (measured 361px / 452px / 271px at 1920px) */
+  .product-offer .product-offer-img-col {
+    width: 33.3333%;
+  }
+
+  .product-offer .product-offer-content-col {
+    position: relative;
+    width: 41.6667%;
+    padding-left: 32px;
+    padding-right: 54px;
+  }
+
+  .product-offer .product-offer-offer-col {
+    width: 25%;
+    margin-top: 0;
+  }
+
+  /* divider belongs to the content column, not a border on the offer column */
+  .product-offer .product-offer-content-col:has(~ .product-offer-offer-col)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 25px;
+    width: 1px;
+    border-right: 1px solid var(--product-offer-divider-color);
+  }
+
+  .product-offer a.product-offer-cta:any-link {
+    margin-top: 48px;
+  }
+
+  .product-offer.image-right .product-offer-img-col {
+    order: 3;
+  }
+
+  .product-offer.image-right .product-offer-content-col:has(~ .product-offer-offer-col)::after {
+    content: none;
+  }
+
+  .product-offer.image-right .product-offer-offer-col {
+    position: relative;
+  }
+
+  .product-offer.image-right .product-offer-offer-col::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 25px;
+    width: 1px;
+    border-right: 1px solid var(--product-offer-divider-color);
+  }
+}
+
+.product-offer.no-divider .product-offer-content-col::after,
+.product-offer.no-divider .product-offer-offer-col::after {
+  content: none;
+}

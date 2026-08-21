@@ -1,0 +1,233 @@
+/* FAQ — contained white panel, single-open rows, straddling view-more pill.
+   Conflict resolved: computedStyle chevron circle #efefef and pill label rgb(31,60,102)
+   have no exact token; using --light-color / --heading-alt-color rather than mint palette. */
+
+.faq {
+  padding: 30px 0 50px;
+}
+
+.faq .faq-panel {
+  position: relative;
+  max-width: var(--content-width-narrow);
+  margin: 0 auto;
+  padding: 20px 24px 60px;
+  border-radius: 50px;
+  background-color: var(--background-color);
+  box-shadow: rgba(22 43 117 / 10%) 0 10px 30px 0;
+}
+
+.faq .faq-heading {
+  margin: 24px 0 48px;
+  font-size: var(--heading-font-size-s);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--dark-color);
+}
+
+/* rows */
+.faq .faq-item {
+  padding: 1rem 0;
+  border-bottom: 2px solid var(--surface-muted);
+}
+
+.faq .faq-item[data-extra] {
+  display: none;
+}
+
+.faq[data-expanded="true"] .faq-item[data-extra],
+.faq.show-all .faq-item[data-extra] {
+  display: block;
+}
+
+/* question — a real button, keyboard operable (no :hover styling, per measured evidence) */
+.faq .faq-question {
+  display: grid;
+  grid-template-columns: 9fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--heading-font-family);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: left;
+  color: var(--dark-color);
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
+
+.faq .faq-question:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 4px;
+}
+
+.faq .faq-item-open .faq-question {
+  color: var(--brand-accent);
+}
+
+/* CSS-drawn chevron in a circle — no raster assets, author-swappable via tokens */
+.faq .faq-chevron {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 100%;
+  background-color: var(--light-color);
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.faq .faq-chevron::before {
+  content: '';
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border: solid var(--dark-color);
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.faq .faq-item-open .faq-chevron {
+  transform: rotate(-180deg);
+  background-color: var(--brand-accent);
+}
+
+.faq .faq-item-open .faq-chevron::before {
+  border-color: var(--background-color);
+}
+
+/* answer — collapsed with the 0fr/1fr grid trick so height animates without JS measuring */
+.faq .faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin: 0 60px 0 20px;
+  transition: grid-template-rows 0.2s ease-in-out;
+}
+
+.faq .faq-answer-inner {
+  overflow: hidden;
+  visibility: hidden;
+  transition: visibility 0.2s ease-in-out;
+}
+
+.faq .faq-item-open .faq-answer {
+  grid-template-rows: 1fr;
+}
+
+.faq .faq-item-open .faq-answer-inner {
+  visibility: visible;
+}
+
+.faq .faq-answer p {
+  margin: 10px 0 48px;
+  font-family: var(--heading-font-family);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--dark-color);
+}
+
+/* authored answers are inconsistently wrapped in <strong>; the source renders them at 400 */
+.faq .faq-answer strong {
+  font-weight: 400;
+}
+
+/* view more / view less pill — straddles the lower panel edge */
+.faq .faq-more {
+  position: absolute;
+  right: 0;
+  bottom: -15px;
+  left: 0;
+  text-align: center;
+}
+
+.faq .faq-more-toggle {
+  position: relative;
+  display: inline-block;
+  padding: 12px 40px 12px 20px;
+  border: 1px solid var(--brand-accent);
+  border-radius: var(--radius-pill);
+  background-color: var(--background-color);
+  font-family: var(--heading-font-family);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 14px;
+  color: var(--heading-alt-color);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.faq .faq-more-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  width: 8px;
+  height: 8px;
+  border: solid currentcolor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.3s, right 0.3s;
+}
+
+.faq .faq-more-toggle:hover {
+  color: var(--dark-color);
+}
+
+.faq .faq-more-toggle:hover::after {
+  right: 8%;
+}
+
+.faq .faq-more-toggle:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 3px;
+}
+
+.faq[data-expanded="true"] .faq-more-toggle::after {
+  transform: translateY(-30%) rotate(225deg);
+}
+
+/* flat variant — rows on the section background, no card */
+.faq.flat .faq-panel {
+  padding: 0 0 60px;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.faq.show-all .faq-more {
+  display: none;
+}
+
+@media (width >= 900px) {
+  .faq .faq-panel {
+    padding: 20px 70px 60px;
+  }
+
+  .faq .faq-heading {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .faq .faq-item {
+    padding: 1rem 2vw;
+  }
+}
+
+@media (width < 900px) {
+  .faq .faq-panel {
+    border-radius: 24px;
+  }
+
+  .faq .faq-answer {
+    margin: 0;
+  }
+
+  .faq .faq-answer p {
+    margin-bottom: 24px;
+  }
+}
